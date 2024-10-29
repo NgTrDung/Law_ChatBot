@@ -1,28 +1,26 @@
-import Text_Content_Query.query_Generator_Gemini as qGG
 import os
-
-from API_Supplier.apikey_GEMINI import APIKeyManager
+import module_RAG.search_Qdrant as s_Q
 
 from dotenv import load_dotenv
-load_dotenv()
+from module_RAG.apikeys_GEMINI import APIKeyManager
 
-from flask import Flask, request, send_file
-app = Flask(__name__)
+APIS_GEMINI_LIST = os.getenv('APIS_GEMINI_LIST').split(',')
+key_manager = APIKeyManager(APIS_GEMINI_LIST)
 
-API_KEYS = os.getenv('API_KEYS').split(',')
-key_manager = APIKeyManager(API_KEYS)
+def handle_Query_HandBook(user_Query):
+    article_Results = s_Q.handle_Query(user_Query, key_manager)
+    idx = 1
+    lst_Article_Content = []
 
-@app.route('/test_query', methods=['POST'])
-def post_query_test():
-   
-    data = request.get_json()
-    user_query = data.get('user_query')
+    for doc, score in article_Results:
+        print("Document:",idx)
+        print(doc.metadata["combine_Article_Content"])
+        lst_Article_Content.append(doc.metadata["combine_Article_Content"])
+        print("-----------------------\n")
+        idx += 1
 
-    response = qGG.get_documents(user_query, key_manager)
+    return lst_Article_Content
     
-    return {
-        'response': response
-    }, 200
-
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+if __name__ == "__main__":
+    user_Query = "Luật quy định như thế nào về việc thành viên trong tổ hợp tác hoặc hợp tác xã sử dụng quyền hạn cho mục đích cá nhân? Có điều khoản nào ngăn cấm việc này không?"
+    handle_Query_HandBook(user_Query)
