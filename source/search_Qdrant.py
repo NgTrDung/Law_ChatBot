@@ -1,6 +1,7 @@
 import os
 import gemini_Generate_Queries as g_G_Q
 import re
+
 from langchain_community.embeddings import HuggingFaceBgeEmbeddings
 from qdrant_client.models import Filter, FieldCondition, MatchValue
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -8,12 +9,12 @@ from sklearn.metrics.pairwise import cosine_similarity
 from apikeys_GEMINI import APIKeyManager
 from sentence_transformers import SentenceTransformer
 from langchain_qdrant import Qdrant
+
 URL_QDRANT_3 = os.getenv("URL_QDRANT_3")
 API_QDRANT_3 = os.getenv("API_QDRANT_3")
 EXIST_ASMK_COLLECTION_NAME = os.getenv("EXIST_ASMK_COLLECTION_NAME")
 EXIST_AMK_COLLECTION_NAME = os.getenv("EXIST_AMK_COLLECTION_NAME")
-APIS_GEMINI_LIST = os.getenv('APIS_GEMINI_LIST').split(',')
-key_manager = APIKeyManager(APIS_GEMINI_LIST)
+
 EMBEDDINGS_MODEL_bkai = "bkai-foundation-models/vietnamese-bi-encoder"
 model_kwargs = {"device": "cpu"}
 encode_kwargs = {"normalize_embeddings": True}
@@ -45,7 +46,7 @@ exist_AMK_Collection = Qdrant.from_existing_collection(
 )
 
 # Các metadata fields cần lọc
-metadata_fields = [
+metadata_Fields_To_Filter = [
     "metadata.loai_van_ban_Keywords", 
     "metadata.noi_ban_hanh_Keywords", 
     "metadata.so_hieu", 
@@ -61,6 +62,7 @@ metadata_fields = [
     "metadata.Content_Keywords",
     "metadata.combine_Article_Content_Keywords"
 ]
+
 # Hàm trích xuất từ khóa từ văn bản, loại bỏ dấu câu ngoại trừ "/" và "-"
 def extract_keywords(text):
     text = re.sub(r'[^\w\s/-]', '', text)  # Loại bỏ các dấu câu không mong muốn
@@ -80,7 +82,7 @@ def process_keywords(keywords):
             result.append(word.lower())  # Chuyển các từ còn lại thành chữ thường
     return result
 
-def create_should_filter(user_keywords, metadata_fields):
+def create_should_filter(user_keywords, metadata_fields = metadata_Fields_To_Filter):
     should_conditions = []
 
     for keyword in user_keywords:
@@ -95,7 +97,7 @@ def create_should_filter(user_keywords, metadata_fields):
         should=should_conditions
     )
 
-def search_documents_with_should_filter(user_query, metadata_fields ,exist_ASMK_Collection, top_k):
+def search_Article_Section_Documents(user_query, metadata_fields = metadata_Fields_To_Filter, top_k = 5):
     # Tách keywords từ query của user
     user_keywords = process_keywords(extract_keywords(user_query))
     
@@ -111,7 +113,7 @@ def search_documents_with_should_filter(user_query, metadata_fields ,exist_ASMK_
     
     return search_results
 
-def combined_search(user_query: str, key_manager, metadata_fields,exist_ASMK_Collection,top_k):
+def search_With_Similarity_Queries(user_query: str, key_manager):
     # Gọi hàm query_generator để sinh ra 3 truy vấn từ query gốc
     queries = g_G_Q.query_generator(user_query, key_manager)
 
@@ -121,7 +123,7 @@ def combined_search(user_query: str, key_manager, metadata_fields,exist_ASMK_Col
 
     # Thực hiện tìm kiếm cho mỗi query trong danh sách queries
     for query in queries:
-        search_results = search_documents_with_should_filter(query, metadata_fields,exist_ASMK_Collection, top_k=top_k)
+        search_results = search_Article_Section_Documents(query)
         query_results.extend(search_results)  # Lưu kết quả riêng cho từng query
 
     # Dictionary để lưu các kết quả unique, key là `doc.page_content`
@@ -141,7 +143,7 @@ def combined_search(user_query: str, key_manager, metadata_fields,exist_ASMK_Col
     # Trả về danh sách kết quả duy nhất, với các giá trị từ dictionary
     return list(unique_results.values())
 
-def calculate_scores(user_query, unique_results,rerank_model):
+def rerank_By_Cosin_TF_IDF(user_query, unique_results, rerank_model = rerank_model):
     # Tạo danh sách các doc.page_content từ unique_results
     documents = [doc.page_content for doc, _ in unique_results]
     
@@ -172,7 +174,15 @@ def calculate_scores(user_query, unique_results,rerank_model):
     
     return top_results
 
-def extract_unique_metadata(top_results):
+def get_Article_Section_Content_Result(user_Query, key_manager):
+    article_Section_Documents = search_With_Similarity_Queries(user_Query, key_manager)
+    rerank_Article_Section_Documents = rerank_By_Cosin_TF_IDF(user_Query, article_Section_Documents)
+
+    # Tạo list chỉ chứa doc.page_content từ danh sách kết quả
+    article_Section_Content_Results = [result[0].metadata["combine_Article_Content"] for result in rerank_Article_Section_Documents]
+    return article_Section_Content_Results
+
+def extract_Unique_Metadata(top_results):
     metadata_list = []
     metadata_dict_set = set()  # Sử dụng set để lưu trữ các metadata duy nhất
 
@@ -212,7 +222,7 @@ def extract_unique_metadata(top_results):
 
     return metadata_list
 
-def search_documents_with_metadata_filter(list_Metadata, exist_AMK_Collection, top_k):
+def search_Article_Documents(list_Metadata, top_k = 5):
     search_results = []
 
     # Duyệt qua từng phần tử trong list_Metadata
@@ -223,19 +233,20 @@ def search_documents_with_metadata_filter(list_Metadata, exist_AMK_Collection, t
             filter=metadata,
             k=top_k
         )
-        # Chỉ lấy page_content từ các kết quả
-        for result,_ in results:
-            page_content = result.metadata["combine_Article_Content"]  # Giả định rằng page_content là thuộc tính của phần tử đầu tiên
-            search_results.append(page_content)
+
+    # Thêm kết quả vào danh sách tìm kiếm
+    search_results.extend(results)
 
     return search_results
-def Search_Context(user_Query):
-    search_Article_Section_Results = combined_search(user_Query, key_manager, metadata_fields,exist_AMK_Collection, top_k=5)
 
-    re_Rank_Article_Section_Results = calculate_scores(user_Query, search_Article_Section_Results,rerank_model)
+def get_Article_Content_Results(user_Query, key_manager):
+    article_Section_Documents = search_With_Similarity_Queries(user_Query, key_manager)
+    rerank_Article_Section_Documents = rerank_By_Cosin_TF_IDF(user_Query, article_Section_Documents)
+    list_Metadata = extract_Unique_Metadata(rerank_Article_Section_Documents)
+    article_Documents = search_Article_Documents(list_Metadata)
+    
+    article_Content_Resuls = []
+    for doc, score in article_Documents:
+        article_Content_Resuls.append(doc.metadata["combine_Article_Content"])
 
-    list_Metadata = extract_unique_metadata(re_Rank_Article_Section_Results)
-
-    article_Results = search_documents_with_metadata_filter(list_Metadata,exist_AMK_Collection,top_k=1)
-
-    return article_Results
+    return article_Content_Resuls

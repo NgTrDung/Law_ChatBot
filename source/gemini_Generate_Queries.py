@@ -13,8 +13,7 @@ if MODEL_GEMINI is None:
     raise ValueError("Environment variable MODEL_GEMINI is not set")
 elif not MODEL_GEMINI.startswith("models/"):
     MODEL_GEMINI = f"models/{MODEL_GEMINI}"
-APIS_GEMINI_LIST = os.getenv('APIS_GEMINI_LIST').split(',')
-key_manager = APIKeyManager(APIS_GEMINI_LIST)
+
 def query_generator(original_query: str, key_manager) -> list[str]:
     """Generate queries from original query"""
     # Câu truy vấn gốc
