@@ -1,9 +1,8 @@
 import torch
 from transformers import AutoModelForQuestionAnswering, AutoTokenizer
 import numpy as np
-model_path="../model/"
-model = AutoModelForQuestionAnswering.from_pretrained(model_path)
-tokenizer = AutoTokenizer.from_pretrained("google-bert/bert-base-multilingual-cased")
+model = AutoModelForQuestionAnswering.from_pretrained("quanghuy123/fine-tuning-bert-for-QA",token='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')
+tokenizer = AutoTokenizer.from_pretrained('google-bert/bert-base-multilingual-cased')
 MAX_LENGTH = 512
 STRIDE = 320
 N_BEST = 120

@@ -13,9 +13,13 @@ def index():
 
 def chatbot():
     user_input = request.json['query']
+    
     contexts= search_Article(user_input)
+    print(contexts)
     answer= predict(contexts,user_input)
+    print(answer)
     return jsonify({'answer': answer})
+
 
 if __name__ == '__main__':
     app.run(debug=True)
