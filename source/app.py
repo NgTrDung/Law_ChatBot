@@ -17,7 +17,6 @@ def chatbot():
     answer= predict(contexts,user_input)
     return jsonify({'answer': answer})
 
-
 if __name__ == '__main__':
     app.run(debug=True)
 
