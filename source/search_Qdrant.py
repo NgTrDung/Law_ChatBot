@@ -222,7 +222,7 @@ def extract_Unique_Metadata(top_results):
 
     return metadata_list
 
-def search_Article_Documents(list_Metadata, top_k = 5):
+def search_Article_Documents(list_Metadata, top_k = 1):
     search_results = []
 
     # Duyệt qua từng phần tử trong list_Metadata
@@ -234,8 +234,8 @@ def search_Article_Documents(list_Metadata, top_k = 5):
             k=top_k
         )
 
-    # Thêm kết quả vào danh sách tìm kiếm
-    search_results.extend(results)
+        # Thêm kết quả vào danh sách tìm kiếm
+        search_results.extend(results)
 
     return search_results
 

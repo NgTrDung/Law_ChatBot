@@ -38,8 +38,8 @@ def search_Article(user_Query, key_manager):
 if __name__ == '__main__':
     # app.run(debug=True)
 
-    user_Query = "Luật quy định như thế nào về việc thành viên trong tổ hợp tác hoặc hợp tác xã sử dụng quyền hạn cho mục đích cá nhân? Có điều khoản nào ngăn cấm việc này không?"
-    results = search_Article_Section(user_Query, key_manager)
+    user_Query = "Thông điệp dữ liệu như file có cần công chứng hoặc chứng thực gì không để được xem là có giá trị như một văn bản, theo quy định của Luật?"
+    results = search_Article(user_Query, key_manager)
 
     # In ra để xem ở cmd
     i=1
