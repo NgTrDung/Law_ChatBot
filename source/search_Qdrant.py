@@ -5,13 +5,8 @@ from langchain_community.embeddings import HuggingFaceBgeEmbeddings
 from qdrant_client.models import Filter, FieldCondition, MatchValue
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-from apikeys_GEMINI import APIKeyManager
 from sentence_transformers import SentenceTransformer
 from langchain_qdrant import Qdrant
-from apikeys_GEMINI import APIKeyManager
-
-APIS_GEMINI_LIST = os.getenv('APIS_GEMINI_LIST').split(',')
-key_manager = APIKeyManager(APIS_GEMINI_LIST)
 URL_QDRANT_3 = os.getenv("URL_QDRANT_3")
 API_QDRANT_3 = os.getenv("API_QDRANT_3")
 EXIST_ASMK_COLLECTION_NAME = os.getenv("EXIST_ASMK_COLLECTION_NAME")
@@ -252,12 +247,13 @@ def get_Article_Content_Results(user_Query, key_manager):
         article_Content_Resuls.append(doc.metadata["combine_Article_Content"])
 
     return article_Content_Resuls
-def search_Article_Section(user_Query):
+
+def search_Article_Section(user_Query, key_manager):
     article_Section_Content_Results = get_Article_Section_Content_Result(user_Query, key_manager)
     
     return article_Section_Content_Results
 
-def search_Article(user_Query):
+def search_Article(user_Query, key_manager):
     article_Document_Results = get_Article_Content_Results(user_Query, key_manager)
     
     return article_Document_Results

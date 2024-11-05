@@ -41,26 +41,21 @@
         </div>
     </div>
     <script>
-        let isLoading = false; // Biến trạng thái để theo dõi trạng thái gửi yêu cầu
-
+        let isLoading = false; 
         document.getElementById('send-button').addEventListener('click', function() {
-            const query = document.getElementById('user-query').value; // Lấy giá trị từ input
-            if (!query || isLoading) return; // Không gửi yêu cầu nếu ô nhập rỗng hoặc đang tải
-
-            isLoading = true; // Đặt trạng thái đang tải
-            document.getElementById('loading-indicator').textContent = "Loading..."; // Hiển thị thời gian chờ
-
-            // Gửi yêu cầu tới API Flask
+            const query = document.getElementById('user-query').value; 
+            if (!query || isLoading) return; 
+            isLoading = true; 
+            document.getElementById('loading-indicator').textContent = "Loading..."; 
             fetch('http://127.0.0.1:5000/chatbot', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ query: query }) // Đóng gói dữ liệu
+                body: JSON.stringify({ query: query }) 
             })
             .then(response => response.json())
             .then(data => {
-                // Hiển thị câu trả lời từ chatbot
                 const chatOutput = document.getElementById('chat-output');
                 chatOutput.innerHTML += `<div class="chat-message user">
                                                 <div class="avatar user-avatar" style="background-image: url('https://media.istockphoto.com/id/1300845620/vector/user-icon-flat-isolated-on-white-background-user-symbol-vector-illustration.jpg?s=612x612&w=0&k=20&c=yBeyba0hUkh14_jgv1OKqIH0CCSWU_4ckRkAoy2p73o=');"></div>
@@ -70,16 +65,15 @@
                                                 <div class="avatar bot-avatar" style="background-image: url('https://media.istockphoto.com/id/2148171304/vector/chatbot-avatar.jpg?s=612x612&w=0&k=20&c=ipIX_zqUkcRsYyI_CSO5eIDm_sjtbCwWVMVWRVp07PE=');"></div>
                                                 <div class="message">${data.answer}</div>
                                             </div>`;
-                document.getElementById('user-query').value = ''; // Xóa ô nhập
-                chatOutput.scrollTop = chatOutput.scrollHeight; // Cuộn xuống cuối
-
-                isLoading = false; // Đặt lại trạng thái sau khi nhận được phản hồi
-                document.getElementById('loading-indicator').textContent = ""; // Ẩn thời gian chờ
+                document.getElementById('user-query').value = ''; 
+                chatOutput.scrollTop = chatOutput.scrollHeight; 
+                isLoading = false; 
+                document.getElementById('loading-indicator').textContent = ""; 
             })
             .catch(error => {
                 console.error('Error:', error);
-                isLoading = false; // Đặt lại trạng thái nếu có lỗi
-                document.getElementById('loading-indicator').textContent = ""; // Ẩn thời gian chờ
+                isLoading = false; 
+                document.getElementById('loading-indicator').textContent = ""; 
             });
         });
 
