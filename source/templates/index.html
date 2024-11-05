@@ -55,26 +55,36 @@
                 body: JSON.stringify({ query: query }) 
             })
             .then(response => response.json())
+           // Đoạn mã trong file HTML (chỉnh lại đoạn then để xử lý danh sách)
             .then(data => {
                 const chatOutput = document.getElementById('chat-output');
                 chatOutput.innerHTML += `<div class="chat-message user">
-                                                <div class="avatar user-avatar" style="background-image: url('https://media.istockphoto.com/id/1300845620/vector/user-icon-flat-isolated-on-white-background-user-symbol-vector-illustration.jpg?s=612x612&w=0&k=20&c=yBeyba0hUkh14_jgv1OKqIH0CCSWU_4ckRkAoy2p73o=');"></div>
-                                                <div class="message">${query}</div>
-                                            </div>`;
-                chatOutput.innerHTML += `<div class="chat-message bot">
+                                            <div class="avatar user-avatar" style="background-image: url('https://media.istockphoto.com/id/1300845620/vector/user-icon-flat-isolated-on-white-background-user-symbol-vector-illustration.jpg?s=612x612&w=0&k=20&c=yBeyba0hUkh14_jgv1OKqIH0CCSWU_4ckRkAoy2p73o=');"></div>
+                                            <div class="message">${query.replace(/\n/g, '<br>')}</div>
+                                        </div>`;
+
+                // Kiểm tra nếu data.answer là mảng (list)
+                if (Array.isArray(data.answer)) {
+                    // Duyệt qua từng phần tử của danh sách và tạo các tin nhắn
+                    data.answer.forEach(item => {
+                        chatOutput.innerHTML += `<div class="chat-message bot">
+                                                    <div class="avatar bot-avatar" style="background-image: url('https://media.istockphoto.com/id/2148171304/vector/chatbot-avatar.jpg?s=612x612&w=0&k=20&c=ipIX_zqUkcRsYyI_CSO5eIDm_sjtbCwWVMVWRVp07PE=');"></div>
+                                                    <div class="message">${item.replace(/\n/g, '<br>')}</div>
+                                                </div>`;
+                    });
+                } else {
+                    // Nếu không phải là mảng, chỉ hiển thị như một tin nhắn
+                    chatOutput.innerHTML += `<div class="chat-message bot">
                                                 <div class="avatar bot-avatar" style="background-image: url('https://media.istockphoto.com/id/2148171304/vector/chatbot-avatar.jpg?s=612x612&w=0&k=20&c=ipIX_zqUkcRsYyI_CSO5eIDm_sjtbCwWVMVWRVp07PE=');"></div>
-                                                <div class="message">${data.answer}</div>
+                                                <div class="message">${data.answer.replace(/\n/g, '<br>')}</div>
                                             </div>`;
+                }
+
                 document.getElementById('user-query').value = ''; 
                 chatOutput.scrollTop = chatOutput.scrollHeight; 
                 isLoading = false; 
-                document.getElementById('loading-indicator').textContent = ""; 
+                document.getElementById('loading-indicator').style.display = "none"; 
             })
-            .catch(error => {
-                console.error('Error:', error);
-                isLoading = false; 
-                document.getElementById('loading-indicator').textContent = ""; 
-            });
         });
 
         function toggleSidebar() {

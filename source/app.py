@@ -3,7 +3,7 @@ import os
 from dotenv import load_dotenv
 from apikeys_GEMINI import APIKeyManager
 from flask import Flask, request, jsonify,render_template
-from generate import predict
+from generate import predict,rerank_By_Cosin_TF_IDF
 from search_Qdrant import search_Article_Section, search_Article
 
 load_dotenv()
@@ -22,9 +22,9 @@ def chatbot():
     user_input = request.json['query']
     
     contexts= search_Article(user_input, key_manager)
-    print(contexts)
-    answer= predict(contexts,user_input)
-    print(answer)
+   
+    answer_candidate= predict(contexts,user_input)
+    answer=rerank_By_Cosin_TF_IDF(user_input,answer_candidate)
     return jsonify({'answer': answer})
 
 

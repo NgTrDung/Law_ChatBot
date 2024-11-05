@@ -4,14 +4,14 @@ from transformers import AutoTokenizer, AutoModelForQuestionAnswering
 from sentence_transformers import SentenceTransformer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-model = AutoModelForQuestionAnswering.from_pretrained("quanghuy123/fine-tuning-bert-for-QA",token='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')
+model = AutoModelForQuestionAnswering.from_pretrained("quanghuy123/fine-tunned-bert-for-QA-final",token='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')
 tokenizer = AutoTokenizer.from_pretrained('google-bert/bert-base-multilingual-cased')
-MAX_LENGTH = 512
-STRIDE = 320
-N_BEST = 120
-MAX_ANSWER_LENGTH = 2000
 MODEL_RERANK = "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
 rerank_model = SentenceTransformer(MODEL_RERANK)
+MAX_LENGTH = 512
+STRIDE = 350
+N_BEST = 150
+MAX_ANSWER_LENGTH = 2000
 def predict(contexts, question):
     answer_final = []
     for context in contexts:
@@ -43,15 +43,18 @@ def predict(contexts, question):
                     if answer_text:
                         answer = {
                             "text": answer_text,
-                            "logit_score": start_logits[start_index] + end_logits[end_index],
+                            "score": start_logits[start_index] + end_logits[end_index],
                         }
                         answers.append(answer)
         if answers:
-            answers.sort(key=lambda x: x["logit_score"], reverse=True)
-            answer_final.append(answers[0]["text"])
+            answers.sort(key=lambda x: x["score"], reverse=True)
+            best_answer = answers[0]['text']
+            if best_answer not in answer_final:
+                answer_final.append(best_answer)
         else: 
             return "Không có câu trả lời"
     return answer_final  
+
 def rerank_By_Cosin_TF_IDF(user_query, documents):
     user_query_embedding = rerank_model.encode(user_query)
     vectorizer = TfidfVectorizer()
@@ -69,5 +72,5 @@ def rerank_By_Cosin_TF_IDF(user_query, documents):
     results_with_scores = [(documents[i], combined_scores[i]) for i in range(len(documents))]
     results_with_scores.sort(key=lambda x: x[1], reverse=True)
     
-    top_results = [results_with_scores[i][0] for i in range(3)]
+    top_results = [results_with_scores[i][0] for i in range(min(2, len(documents)))]
     return top_results
