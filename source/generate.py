@@ -1,12 +1,17 @@
-import torch
-from transformers import AutoModelForQuestionAnswering, AutoTokenizer
 import numpy as np
+import torch
+from transformers import AutoTokenizer, AutoModelForQuestionAnswering
+from sentence_transformers import SentenceTransformer
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 model = AutoModelForQuestionAnswering.from_pretrained("quanghuy123/fine-tuning-bert-for-QA",token='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')
 tokenizer = AutoTokenizer.from_pretrained('google-bert/bert-base-multilingual-cased')
 MAX_LENGTH = 512
 STRIDE = 320
 N_BEST = 120
 MAX_ANSWER_LENGTH = 2000
+MODEL_RERANK = "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
+rerank_model = SentenceTransformer(MODEL_RERANK)
 def predict(contexts, question):
     answer_final = []
     for context in contexts:
@@ -47,4 +52,22 @@ def predict(contexts, question):
         else: 
             return "Không có câu trả lời"
     return answer_final  
- 
+def rerank_By_Cosin_TF_IDF(user_query, documents):
+    user_query_embedding = rerank_model.encode(user_query)
+    vectorizer = TfidfVectorizer()
+    tfidf_matrix = vectorizer.fit_transform(documents)  
+    user_query_tfidf = vectorizer.transform([user_query]) 
+    tfidf_scores = cosine_similarity(user_query_tfidf, tfidf_matrix).flatten() 
+    
+    combined_scores = []
+    for i, document in enumerate(documents):
+        document_embedding = rerank_model.encode(document) 
+        cos_sim = cosine_similarity([user_query_embedding], [document_embedding])[0][0]  
+        combined_score = 0.7 * cos_sim + 0.3 * tfidf_scores[i]  
+        combined_scores.append(combined_score)
+    
+    results_with_scores = [(documents[i], combined_scores[i]) for i in range(len(documents))]
+    results_with_scores.sort(key=lambda x: x[1], reverse=True)
+    
+    top_results = [results_with_scores[i][0] for i in range(3)]
+    return top_results

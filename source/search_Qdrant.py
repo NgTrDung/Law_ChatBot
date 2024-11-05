@@ -1,7 +1,6 @@
 import os
 import gemini_Generate_Queries as g_G_Q
 import re
-
 from dotenv import load_dotenv
 from langchain_community.embeddings import HuggingFaceBgeEmbeddings
 from qdrant_client.models import Filter, FieldCondition, MatchValue
