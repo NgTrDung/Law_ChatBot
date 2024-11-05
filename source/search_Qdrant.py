@@ -109,7 +109,8 @@ def search_Article_Section_Documents(user_query, metadata_fields = metadata_Fiel
     search_results = exist_ASMK_Collection.similarity_search_with_score(
         query=user_query,
         filter=filter_conditions,
-        k=top_k
+        k=top_k,
+        timeout = 300
     )
     
     return search_results
@@ -232,7 +233,8 @@ def search_Article_Documents(list_Metadata, top_k = 1):
         results = exist_AMK_Collection.similarity_search_with_score(
             query="",  # Query để trống
             filter=metadata,
-            k=top_k
+            k=top_k,
+            timeout = 300
         )
 
         # Thêm kết quả vào danh sách tìm kiếm
