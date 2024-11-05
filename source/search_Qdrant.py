@@ -1,12 +1,15 @@
 import os
 import gemini_Generate_Queries as g_G_Q
 import re
+
+from dotenv import load_dotenv
 from langchain_community.embeddings import HuggingFaceBgeEmbeddings
 from qdrant_client.models import Filter, FieldCondition, MatchValue
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from sentence_transformers import SentenceTransformer
 from langchain_qdrant import Qdrant
+load_dotenv()
 URL_QDRANT_3 = os.getenv("URL_QDRANT_3")
 API_QDRANT_3 = os.getenv("API_QDRANT_3")
 EXIST_ASMK_COLLECTION_NAME = os.getenv("EXIST_ASMK_COLLECTION_NAME")
@@ -105,7 +108,8 @@ def search_Article_Section_Documents(user_query, metadata_fields = metadata_Fiel
     search_results = exist_ASMK_Collection.similarity_search_with_score(
         query=user_query,
         filter=filter_conditions,
-        k=top_k
+        k=top_k,
+        timeout = 300
     )
     
     return search_results
@@ -228,7 +232,8 @@ def search_Article_Documents(list_Metadata, top_k = 1):
         results = exist_AMK_Collection.similarity_search_with_score(
             query="",  # Query để trống
             filter=metadata,
-            k=top_k
+            k=top_k,
+            timeout = 300
         )
 
         # Thêm kết quả vào danh sách tìm kiếm
