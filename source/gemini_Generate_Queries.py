@@ -1,11 +1,5 @@
 import os
-<<<<<<< HEAD
 from dotenv import load_dotenv
-=======
-
-from dotenv import load_dotenv
-from apikeys_GEMINI import APIKeyManager
->>>>>>> 563a60abe474d7bd91a47962bb7035be344a1271
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.output_parsers import StrOutputParser
