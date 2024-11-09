@@ -1,0 +1,243 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #171717;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    height: 100vh;
+}
+
+.chat-container {
+    display: flex;
+    width: 100%;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Thêm bóng đổ cho container */
+}
+
+.sidebar {
+    background-color: #171717; /* Nền trắng cho thanh #171717 */
+    width: 250px; /* Thay đổi kích thước thanh sidebar */
+    transition: width 0.3s;
+    position: relative;
+    border-right: 1px solid #171717; /* Đường viền bên phải */
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1); /* Thêm bóng đổ cho sidebar */
+}
+
+.sidebar-content {
+    display: none; /* Ẩn nội dung ban đầu */
+    padding: 15px; /* Thêm padding cho nội dung */
+    color: white;
+}
+
+.sidebar-content.active {
+    display: block; /* Hiện nội dung khi active */
+}
+
+.toggle-button {
+    background-color: #4A90E2;
+    border: none;
+    color: white;
+    padding: 10px;
+    cursor: pointer;
+    width: 100%; /* Đặt chiều rộng nút bằng với sidebar */
+}
+
+.sidebar ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.sidebar ul li {
+    padding: 10px;
+}
+
+.sidebar ul li a {
+    color: white; /* Màu chữ đen cho liên kết */
+    text-decoration: none;
+    display: block; /* Thay đổi để toàn bộ khu vực có thể nhấn */
+}
+
+.sidebar ul li a:hover {
+    background-color: #f0f0f0; /* Thay đổi màu nền khi hover */
+}
+
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.header {
+    padding: 5px;
+    background-color: #171717;
+    color: #ffffff;
+    display: flex;
+    align-items: center; /* Căn giữa theo chiều dọc */
+    justify-content: center; /* Căn giữa theo chiều ngang */
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+}
+
+.header h2 {
+    margin: 0;
+    padding-left: 10px;
+}
+
+.chat-box {
+    flex: 1;
+    padding: 15px;
+    background-color: #212121; /* Đổi màu nền thành #212121 */
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    border-bottom: 1px solid #ddd; /* Thêm đường viền phía dưới */
+}
+
+.chat-message {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.chat-message.bot .message {
+    background-color: #212121; /* Màu sắc cho tin nhắn bot */
+    color: #ffffff; /* Đổi màu chữ thành trắng */
+    border-radius: 10px 10px 10px 0; /* Bo tròn góc tin nhắn bot */
+    align-self: flex-start; /* Căn trái */
+}
+
+.chat-message.user .message {
+    background-color: #303030; /* Màu sắc cho tin nhắn người dùng */
+    color: #ffffff;
+    align-self: flex-end;
+    border-radius: 10px 10px 0 10px; /* Bo tròn góc tin nhắn người dùng */
+    align-self: flex-end; /* Căn phải */
+}
+
+.message {
+    padding: 10px 15px;
+    max-width: 70%;
+    margin-left: 10px;
+    word-wrap: break-word; /* Ngắt dòng nếu tin nhắn quá dài */
+}
+
+.avatar {
+    width: 45px; /* Kích thước avatar nhỏ hơn */
+    height: 45px; /* Kích thước avatar nhỏ hơn */
+    background-color: #ccc;
+    border-radius: 50%;
+    background-size: cover; /* Đảm bảo hình ảnh bao phủ toàn bộ avatar */
+    background-position: center; /* Căn giữa hình ảnh */
+}
+
+.input-area {
+    display: flex;
+    padding: 15px;
+    background-color: #212121; /* Đổi màu nền thành #212121 */
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+}
+
+input[type="text"] {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #2F2F2F; /* Đường viền cho input */
+    border-radius: 5px;
+    margin-right: 10px;
+    background-color: #2F2F2F; /* Đổi màu nền thành #2F2F2F */
+    color: #ffffff; /* Đổi màu chữ thành trắng */
+}
+
+button {
+    padding: 10px 15px;
+    background-color: #676767; /* Màu nền mặc định */
+    color: #2F2F2F; /* Màu chữ mặc định */
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+
+.chatbot-image {
+    width: 50px; /* Chiều rộng của ảnh */
+    height: auto; /* Tự động điều chỉnh chiều cao */
+    margin-bottom: 10px; /* Khoảng cách phía dưới ảnh */
+}
+
+
+/*------------------------------------------------------*/
+
+
+.chat-message {
+    display: flex;
+    justify-content: flex-start; /* Tin nhắn của chatbot căn trái */
+}
+
+.chat-message.user {
+    justify-content: flex-end; /* Tin nhắn của người dùng căn phải */
+}
+
+button.active { /* Thêm lớp .active có hiệu ứng như :hover */
+    background-color: #ffffff; /* Màu nền active */
+    color: #000000; /* Màu chữ active */
+}
+
+/* Trạng thái hover khi nút đang ở trạng thái active */
+button.active:hover {
+    background-color: #C1C1C1; /* Màu nền khi hover */
+    color: #0E0E0E; /* Màu chữ khi hover */
+}
+
+button:disabled {
+    background-color: #676767;
+    color: #2F2F2F;
+    cursor: not-allowed;
+}
+
+/* Cập nhật CSS cho hiệu ứng chuyển động */
+@keyframes wave {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); } /* Hiệu ứng lên xuống 5px */
+}
+
+.typing-indicator {
+    display: flex;
+    align-items: center;
+    font-size: 20px;
+    color: #ffffff;
+}
+
+.typing-indicator span {
+    animation: wave 1.9s ease-in-out infinite; /* Tổng thời gian chu kỳ là 1.9s, gồm 0.9s chuyển động và 1s nghỉ */
+    display: inline-block;
+    margin-right: 2px; /* Khoảng cách 2px giữa các dấu chấm */
+}
+
+.typing-indicator span:last-child {
+    margin-right: 0; /* Xóa khoảng cách sau dấu chấm cuối cùng */
+}
+
+.typing-indicator span:nth-child(1) {
+    animation-delay: 0s; /* Dấu chấm đầu tiên bắt đầu ngay lập tức */
+}
+.typing-indicator span:nth-child(2) {
+    animation-delay: 0.3s; /* Dấu chấm thứ hai bắt đầu sau 0.3s */
+}
+.typing-indicator span:nth-child(3) {
+    animation-delay: 0.6s; /* Dấu chấm thứ ba bắt đầu sau 0.6s */
+}
+
+.sidebar-toggle-button {
+    background-color: #4A90E2;
+    border: none;
+    color: white;
+    padding: 10px;
+    cursor: pointer;
+    font-size: 18px;
+    margin-right: 15px;
+    position: absolute; /* Đặt vị trí của nút */
+    left: 10px; /* Căn nút về bên trái */
+}
+.header {
+    position: relative; /* Cho phép nút sidebar-toggle-button định vị chính xác */
+    padding-left: 50px; /* Tạo khoảng trống để nút không che phần nội dung header */
+}
