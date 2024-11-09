@@ -1,6 +1,12 @@
 import os
+<<<<<<< HEAD
 import source.gemini_Generate_Queries as g_G_Q
 import re
+=======
+import gemini_Generate_Queries as g_G_Q
+import re
+
+>>>>>>> 563a60abe474d7bd91a47962bb7035be344a1271
 from dotenv import load_dotenv
 from langchain_community.embeddings import HuggingFaceBgeEmbeddings
 from qdrant_client.models import Filter, FieldCondition, MatchValue
@@ -8,6 +14,10 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from sentence_transformers import SentenceTransformer
 from langchain_qdrant import Qdrant
+<<<<<<< HEAD
+=======
+
+>>>>>>> 563a60abe474d7bd91a47962bb7035be344a1271
 load_dotenv()
 URL_QDRANT_3 = os.getenv("URL_QDRANT_3")
 API_QDRANT_3 = os.getenv("API_QDRANT_3")

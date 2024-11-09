@@ -1,0 +1,160 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    height: 100vh;
+}
+
+.chat-container {
+    display: flex;
+    width: 100%;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Thêm bóng đổ cho container */
+}
+
+.sidebar {
+    background-color: #ffffff; /* Nền trắng cho thanh sidebar */
+    width: 250px; /* Thay đổi kích thước thanh sidebar */
+    transition: width 0.3s;
+    position: relative;
+    border-right: 1px solid #ddd; /* Đường viền bên phải */
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1); /* Thêm bóng đổ cho sidebar */
+}
+
+.sidebar-content {
+    display: none; /* Ẩn nội dung ban đầu */
+    padding: 15px; /* Thêm padding cho nội dung */
+}
+
+.sidebar-content.active {
+    display: block; /* Hiện nội dung khi active */
+}
+
+.toggle-button {
+    background-color: #4A90E2;
+    border: none;
+    color: white;
+    padding: 10px;
+    cursor: pointer;
+    width: 100%; /* Đặt chiều rộng nút bằng với sidebar */
+}
+
+.sidebar ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.sidebar ul li {
+    padding: 10px;
+}
+
+.sidebar ul li a {
+    color: black; /* Màu chữ đen cho liên kết */
+    text-decoration: none;
+    display: block; /* Thay đổi để toàn bộ khu vực có thể nhấn */
+}
+
+.sidebar ul li a:hover {
+    background-color: #f0f0f0; /* Thay đổi màu nền khi hover */
+}
+
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.header {
+    padding: 5px; /* Thay đổi padding để thu nhỏ chiều cao của header */
+    background-color: #4A90E2; /* Màu sắc tương tự như ChatGPT */
+    color: #ffffff;
+    display: flex; /* Sử dụng flexbox */
+    align-items: center; /* Căn giữa theo chiều dọc */
+    justify-content: flex-start; /* Căn trái các phần tử */
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+}
+
+.header h2 {
+    margin: 0; /* Đặt margin thành 0 để loại bỏ khoảng cách mặc định */
+    padding-left: 10px; /* Thêm khoảng cách bên trái nếu cần */
+}
+
+.chat-box {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    border-bottom: 1px solid #ddd; /* Thêm đường viền phía dưới */
+}
+
+.chat-message {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.chat-message.bot .message {
+    background-color: #e1f5fe; /* Màu sắc cho tin nhắn bot */
+    border-radius: 10px 10px 10px 0; /* Bo tròn góc tin nhắn bot */
+}
+
+.chat-message.user .message {
+    background-color: #4A90E2; /* Màu sắc cho tin nhắn người dùng */
+    color: #ffffff;
+    align-self: flex-end;
+    border-radius: 10px 10px 0 10px; /* Bo tròn góc tin nhắn người dùng */
+}
+
+.message {
+    padding: 10px 15px;
+    max-width: 70%;
+    margin-left: 10px;
+    word-wrap: break-word; /* Ngắt dòng nếu tin nhắn quá dài */
+}
+
+.avatar {
+    width: 45px; /* Kích thước avatar nhỏ hơn */
+    height: 45px; /* Kích thước avatar nhỏ hơn */
+    background-color: #ccc;
+    border-radius: 50%;
+    background-size: cover; /* Đảm bảo hình ảnh bao phủ toàn bộ avatar */
+    background-position: center; /* Căn giữa hình ảnh */
+}
+
+.input-area {
+    display: flex;
+    padding: 15px;
+    background-color: #f0f0f0;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+}
+
+input[type="text"] {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ddd; /* Đường viền cho input */
+    border-radius: 5px;
+    margin-right: 10px;
+}
+
+button {
+    padding: 10px 15px;
+    background-color: #4A90E2; /* Màu sắc cho nút */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #357ABD; /* Màu sắc khi di chuột lên nút */
+}
+
+.chatbot-image {
+    width: 50px; /* Chiều rộng của ảnh */
+    height: auto; /* Tự động điều chỉnh chiều cao */
+    margin-bottom: 10px; /* Khoảng cách phía dưới ảnh */
+}
