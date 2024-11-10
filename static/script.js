@@ -60,7 +60,7 @@ function typeMessage($element, message) {
             isTyping = false; // Kết thúc trạng thái gõ
             updateSendButtonState(); // Cập nhật trạng thái nút Send sau khi hoàn thành
         }
-    }, 150); // Điều chỉnh tốc độ gõ chữ (150ms mỗi từ)
+    }, 100); // Điều chỉnh tốc độ gõ chữ (100ms mỗi từ)
 }
 
 function updateSendButtonState() {
