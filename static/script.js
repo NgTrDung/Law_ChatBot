@@ -60,7 +60,7 @@ function typeMessage($element, message) {
             isTyping = false; // Kết thúc trạng thái gõ
             updateSendButtonState(); // Cập nhật trạng thái nút Send sau khi hoàn thành
         }
-    }, 100); // Điều chỉnh tốc độ gõ chữ (100ms mỗi từ)
+    }, 50); // Điều chỉnh tốc độ gõ chữ (50ms mỗi từ)
 }
 
 function updateSendButtonState() {
@@ -72,13 +72,93 @@ function updateSendButtonState() {
     }
 }
 
+// Hàm tạo thẻ cho lst_Relevant_Documents
+function displayRelevantDocuments(documents) {
+    const container = $('#relevant-documents-container');
+    container.empty(); // Xóa các thẻ cũ nếu có
+
+    documents.forEach((doc, index) => {
+        // Giới hạn nội dung hiển thị (ví dụ: 100 ký tự đầu tiên)
+        const shortContent = doc.length > 100 ? doc.substring(0, 100) + '...' : doc;
+
+        // Tạo thẻ cho document
+        const docElement = $(`
+            <div class="relevant-document" data-full-content="${doc}">
+                ${shortContent}
+            </div>
+        `);
+
+        // Thêm sự kiện click để mở rộng nội dung đầy đủ
+        docElement.on('click', function() {
+            const fullContent = $(this).data('full-content');
+            openFullscreenDocument(fullContent);
+        });
+
+        container.append(docElement);
+    });
+}
+
+// Hàm mở nội dung đầy đủ trong modal
+function openFullscreenDocument(content) {
+    // Thay thế ký tự xuống dòng bằng thẻ <br> để hiển thị cách dòng đúng
+    const formattedContent = content.replace(/\n/g, "<br>");
+
+    const overlay = $(`
+        <div class="fullscreen-overlay">
+            <div class="fullscreen-document">
+                ${formattedContent}
+            </div>
+        </div>
+    `);
+
+    // Đóng modal khi nhấp ra bên ngoài
+    overlay.on('click', function(e) {
+        if ($(e.target).is('.fullscreen-overlay')) {
+            overlay.remove();
+        }
+    });
+
+    $('body').append(overlay);
+}
+
+// Gọi hàm displayRelevantDocuments khi có dữ liệu từ chatbot
+function processResponse(data) {
+    const { answer, lst_Relevant_Documents } = data;
+    let formattedAnswer = "";
+
+    // Chuẩn bị nội dung phản hồi của chatbot với xuống dòng bằng <br>
+    if (Array.isArray(answer)) {
+        answer.forEach((ans, index) => {
+            formattedAnswer += `Answer ${index + 1}: ${ans.replace(/\n/g, "<br>")}<br><br>`;
+        });
+    } else {
+        formattedAnswer = answer.replace(/\n/g, "<br>");
+    }
+
+    // Tạo một phần tử trống để từng từ sẽ được gõ vào đó
+    const $chatOutput = $('#chat-output');
+    const $botMessage = $(`
+        <div class="chat-message bot">
+            <div class="avatar bot-avatar" style="background-image: url('https://png.pngtree.com/png-vector/20230225/ourmid/pngtree-smart-chatbot-cartoon-clipart-png-image_6620453.png');"></div>
+            <div class="message"></div>
+        </div>
+    `);
+    $chatOutput.append($botMessage);
+
+    // Gọi typeMessage để gõ từng từ của câu trả lời (không in ra trực tiếp nữa)
+    typeMessage($botMessage.find(".message"), formattedAnswer);
+
+    // Gọi hàm để hiển thị các thẻ từ lst_Relevant_Documents
+    displayRelevantDocuments(lst_Relevant_Documents);
+}
+
+// Điều chỉnh hàm sendMessage để sử dụng processResponse
 function sendMessage() {
     const query = $userInput.val().trim();
-    if (!query || isLoading || isTyping) return; // Không gửi tin nếu đang gõ, input trống, hoặc đang chờ phản hồi
+    if (!query || isLoading || isTyping) return;
 
     $sendButton.prop('disabled', true).removeClass('active').addClass('disabled');
-
-    isLoading = true; // Bắt đầu trạng thái chờ phản hồi
+    isLoading = true;
     $('#loading-indicator').text("Loading...");
 
     const $chatOutput = $('#chat-output');
@@ -89,7 +169,7 @@ function sendMessage() {
         </div>
     `);
 
-    $userInput.val(''); // Xóa nội dung input sau khi gửi
+    $userInput.val('');
     $chatOutput.scrollTop($chatOutput.prop('scrollHeight'));
 
     const $typingIndicator = $(`
@@ -109,32 +189,10 @@ function sendMessage() {
         success: function(data) {
             setTimeout(() => {
                 $typingIndicator.remove();
-
-                let formattedAnswer = "";
-                if (Array.isArray(data.answer)) {
-                    data.answer.forEach((answer, index) => {
-                        formattedAnswer += `Answer ${index + 1}: ${answer}\n\n`;
-                    });
-                } else {
-                    formattedAnswer = data.answer;
-                }
-                formattedAnswer = formattedAnswer.replace(/\n/g, "<br>");
-                formattedAnswer = formattedAnswer.replace(/\n\n/g, "<br>");
-
-                const $botMessage = $(`
-                    <div class="chat-message bot">
-                        <div class="avatar bot-avatar" style="background-image: url('https://png.pngtree.com/png-vector/20230225/ourmid/pngtree-smart-chatbot-cartoon-clipart-png-image_6620453.png');"></div>
-                        <div class="message"></div>
-                    </div>
-                `);
-                $chatOutput.append($botMessage);
-
-                // Sử dụng hiệu ứng gõ từng từ
-                typeMessage($botMessage.find(".message"), formattedAnswer);
-
+                processResponse(data); // Sử dụng processResponse để xử lý phản hồi
                 $chatOutput.scrollTop($chatOutput.prop('scrollHeight'));
-                isLoading = false; // Hoàn tất trạng thái chờ phản hồi
-                updateSendButtonState(); // Cập nhật trạng thái nút Send sau khi hoàn thành
+                isLoading = false;
+                updateSendButtonState();
                 $('#loading-indicator').text("");
             }, 800);
         }
