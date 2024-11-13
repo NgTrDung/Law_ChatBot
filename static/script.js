@@ -43,7 +43,7 @@ $('#user-query').on('keydown', function(event) {
     }
 });
 
-function typeMessage($element, message) {
+function typeMessage($element, message, callback) {
     const words = message.split(" ");
     let index = 0;
 
@@ -54,11 +54,12 @@ function typeMessage($element, message) {
         if (index < words.length) {
             $element.append(words[index] + " ");
             index++;
-            $chatOutput.scrollTop($chatOutput.prop('scrollHeight'));
+            $element.parent().scrollTop($element.parent().prop('scrollHeight'));
         } else {
             clearInterval(interval);
             isTyping = false; // Kết thúc trạng thái gõ
             updateSendButtonState(); // Cập nhật trạng thái nút Send sau khi hoàn thành
+            if (callback) callback(); // Gọi callback sau khi in xong
         }
     }, 50); // Điều chỉnh tốc độ gõ chữ (50ms mỗi từ)
 }
@@ -77,6 +78,14 @@ function displayRelevantDocuments(documents) {
     const container = $('#relevant-documents-container');
     container.empty(); // Xóa các thẻ cũ nếu có
 
+    // Tạo div chứa tiêu đề
+    const title = $('<div class="references-title">Trích dẫn tham khảo</div>');
+    container.append(title);
+
+    // Tạo một div riêng cho các thẻ tài liệu
+    const documentsWrapper = $('<div class="documents-wrapper"></div>');
+    container.append(documentsWrapper);
+
     documents.forEach((doc, index) => {
         // Giới hạn nội dung hiển thị (ví dụ: 100 ký tự đầu tiên)
         const shortContent = doc.length > 100 ? doc.substring(0, 100) + '...' : doc;
@@ -94,7 +103,7 @@ function displayRelevantDocuments(documents) {
             openFullscreenDocument(fullContent);
         });
 
-        container.append(docElement);
+        documentsWrapper.append(docElement);
     });
 }
 
@@ -103,21 +112,23 @@ function openFullscreenDocument(content) {
     // Thay thế ký tự xuống dòng bằng thẻ <br> để hiển thị cách dòng đúng
     const formattedContent = content.replace(/\n/g, "<br>");
 
+    // Tạo overlay để hiển thị nội dung phóng to
     const overlay = $(`
         <div class="fullscreen-overlay">
             <div class="fullscreen-document">
-                ${formattedContent}
+                <div class="document-content">${formattedContent}</div>
             </div>
         </div>
     `);
 
-    // Đóng modal khi nhấp ra bên ngoài
+    // Thêm sự kiện click vào overlay để đóng khi nhấp ra bên ngoài tài liệu
     overlay.on('click', function(e) {
         if ($(e.target).is('.fullscreen-overlay')) {
-            overlay.remove();
+            overlay.remove(); // Đóng overlay khi click vào vùng tối
         }
     });
 
+    // Thêm overlay vào body
     $('body').append(overlay);
 }
 
@@ -145,17 +156,20 @@ function processResponse(data) {
     `);
     $chatOutput.append($botMessage);
 
-    // Gọi typeMessage để gõ từng từ của câu trả lời (không in ra trực tiếp nữa)
-    typeMessage($botMessage.find(".message"), formattedAnswer);
-
-    // Gọi hàm để hiển thị các thẻ từ lst_Relevant_Documents
-    displayRelevantDocuments(lst_Relevant_Documents);
+    // Gọi typeMessage với callback để hiển thị tài liệu liên quan sau khi in xong câu trả lời
+    typeMessage($botMessage.find(".message"), formattedAnswer, () => {
+        // Gọi hàm để hiển thị các thẻ từ lst_Relevant_Documents
+        displayRelevantDocuments(lst_Relevant_Documents);
+    });
 }
 
 // Điều chỉnh hàm sendMessage để sử dụng processResponse
 function sendMessage() {
     const query = $userInput.val().trim();
     if (!query || isLoading || isTyping) return;
+
+    // Xóa nội dung của relevant-documents-container
+    $('#relevant-documents-container').empty();
 
     $sendButton.prop('disabled', true).removeClass('active').addClass('disabled');
     isLoading = true;
