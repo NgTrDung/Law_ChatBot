@@ -253,7 +253,6 @@ button:disabled {
 /* Kiểu thẻ cho các nội dung từ lst_Relevant_Documents */
 .relevant-document {
     width: 200px;
-    margin: 10px;
     padding: 15px;
     background-color: #f9f9f9;
     border: 1px solid #ddd;
@@ -291,4 +290,12 @@ button:disabled {
     border-radius: 8px;
     overflow-y: auto;
     max-height: 80vh;
+}
+
+/* Sắp xếp các thẻ trong hàng ngang */
+.relevant-documents-container {
+    display: flex;
+    gap: 5px; /* Khoảng cách giữa các thẻ */
+    flex-wrap: wrap; /* Đảm bảo các thẻ xuống hàng nếu không đủ chỗ */
+    margin-top: 10px; /* Khoảng cách với tin nhắn phía trên */
 }
