@@ -20,10 +20,10 @@ def index():
 @app.route('/chatbot', methods=['POST'])
 def chatbot():
     user_input = request.json['query']
-    contexts = search_Article(user_input, key_manager)
+    contexts, lst_Article_Quote = search_Article(user_input, key_manager)
     answer_candidates = predict(contexts,user_input)
     answers = rerank_By_Cosin_TF_IDF(user_input,answer_candidates)
-    lst_Relevant_Documents = find_relevant_contexts(contexts, answers)
+    lst_Relevant_Documents = find_relevant_contexts(lst_Article_Quote, answers)
     print(answers,"\n\n")
     print(lst_Relevant_Documents) 
 

@@ -252,10 +252,43 @@ def get_Article_Content_Results(user_Query, key_manager):
     article_Documents = search_Article_Documents(list_Metadata)
     
     article_Content_Resuls = []
+    lst_Article_Quote = []
+
     for doc, score in article_Documents:
         article_Content_Resuls.append(doc.metadata["combine_Article_Content"])
 
-    return article_Content_Resuls
+        # Trích xuất thông tin từ metadata
+        loai_van_ban = doc.metadata.get("loai_van_ban", "N/A")
+        noi_ban_hanh = doc.metadata.get("noi_ban_hanh", "N/A")
+        so_hieu = doc.metadata.get("so_hieu", "N/A")
+        linhvuc_nganh = doc.metadata.get("linhvuc_nganh", "N/A")
+        ngay_ban_hanh = doc.metadata.get("ngay_ban_hanh", "N/A")
+        ngay_hieu_luc = doc.metadata.get("ngay_hieu_luc", "N/A")
+        chu_de = doc.metadata.get("chu_de", "N/A")
+        chapter = doc.metadata.get("Chapter", "N/A")
+        section = doc.metadata.get("Section", "N/A")
+        mini_section = doc.metadata.get("Mini-Section", "N/A")
+        combine_Article_Content = doc.metadata.get("combine_Article_Content", "N/A")
+
+        # Định dạng nội dung quote
+        formatted_quote = f"""\
+                        Loại văn bản: {loai_van_ban}
+                        Nơi ban hành: {noi_ban_hanh}
+                        Số hiệu: {so_hieu}
+                        Lĩnh vực - ngành: {linhvuc_nganh}
+                        Ngày ban hành: {ngay_ban_hanh}
+                        Ngày hiệu lực: {ngay_hieu_luc}
+                        Chủ đề: {chu_de}
+                        Chương: {chapter}
+                        Mục: {section}
+                        Tiểu mục: {mini_section}
+                        <=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=>
+                        {combine_Article_Content}
+                        """
+        # Thêm vào danh sách lst_Article_Quote
+        lst_Article_Quote.append(formatted_quote)
+
+    return article_Content_Resuls, lst_Article_Quote
 
 def search_Article_Section(user_Query, key_manager):
     article_Section_Content_Results = get_Article_Section_Content_Result(user_Query, key_manager)
@@ -263,6 +296,6 @@ def search_Article_Section(user_Query, key_manager):
     return article_Section_Content_Results
 
 def search_Article(user_Query, key_manager):
-    article_Document_Results = get_Article_Content_Results(user_Query, key_manager)
+    article_Document_Results, lst_Article_Quote = get_Article_Content_Results(user_Query, key_manager)
     
-    return article_Document_Results
+    return article_Document_Results, lst_Article_Quote
