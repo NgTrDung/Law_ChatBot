@@ -61,7 +61,7 @@ function typeMessage($element, message, callback) {
             updateSendButtonState(); // Cập nhật trạng thái nút Send sau khi hoàn thành
             if (callback) callback(); // Gọi callback sau khi in xong
         }
-    }, 50); // Điều chỉnh tốc độ gõ chữ (50ms mỗi từ)
+    }, 25); // Điều chỉnh tốc độ gõ chữ (25ms mỗi từ)
 }
 
 function updateSendButtonState() {
@@ -137,14 +137,8 @@ function processResponse(data) {
     const { answer, lst_Relevant_Documents } = data;
     let formattedAnswer = "";
 
-    // Chuẩn bị nội dung phản hồi của chatbot với xuống dòng bằng <br>
-    if (Array.isArray(answer)) {
-        answer.forEach((ans, index) => {
-            formattedAnswer += `Answer ${index + 1}: ${ans.replace(/\n/g, "<br>")}<br><br>`;
-        });
-    } else {
-        formattedAnswer = answer.replace(/\n/g, "<br>");
-    }
+    // Vì `answer` bây giờ là một chuỗi, chỉ cần thay thế ký tự xuống dòng bằng <br> để hiển thị đúng
+    formattedAnswer = answer.replace(/\n/g, "<br>");
 
     // Tạo một phần tử trống để từng từ sẽ được gõ vào đó
     const $chatOutput = $('#chat-output');
@@ -156,9 +150,9 @@ function processResponse(data) {
     `);
     $chatOutput.append($botMessage);
 
-    // Gọi typeMessage với callback để hiển thị tài liệu liên quan sau khi in xong câu trả lời
+    // Gọi typeMessage để hiển thị từng từ của câu trả lời
     typeMessage($botMessage.find(".message"), formattedAnswer, () => {
-        // Gọi hàm để hiển thị các thẻ từ lst_Relevant_Documents
+        // Sau khi hoàn thành việc hiển thị câu trả lời, gọi hàm hiển thị tài liệu liên quan
         displayRelevantDocuments(lst_Relevant_Documents);
     });
 }
