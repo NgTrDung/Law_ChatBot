@@ -1,13 +1,15 @@
 import numpy as np
 import torch
+
 from transformers import AutoTokenizer, AutoModelForQuestionAnswering
 from sentence_transformers import SentenceTransformer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+from rank_bm25 import BM25Okapi
 
 model = AutoModelForQuestionAnswering.from_pretrained("quanghuy123/fine-tuning-bert-for-QA",token='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')
 tokenizer = AutoTokenizer.from_pretrained('google-bert/bert-base-multilingual-cased')
-MODEL_RERANK = "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
+MODEL_RERANK = "bkai-foundation-models/vietnamese-bi-encoder"
 rerank_model = SentenceTransformer(MODEL_RERANK)
 MAX_LENGTH = 512
 STRIDE = 380
@@ -57,21 +59,22 @@ def predict(contexts, question):
             return "Không có câu trả lời"
     return answer_final  
 
-def rerank_By_Cosin_TF_IDF(user_query, documents):
+def rerank_By_Cosin_BM25(user_query, documents):
     user_query_embedding = rerank_model.encode(user_query)
-    vectorizer = TfidfVectorizer()
-    tfidf_matrix = vectorizer.fit_transform(documents)  
-    user_query_tfidf = vectorizer.transform([user_query]) 
-    tfidf_scores = cosine_similarity(user_query_tfidf, tfidf_matrix).flatten() 
-    
+    tokenized_documents = [doc.split() for doc in documents]
+    bm25 = BM25Okapi(tokenized_documents)
+    user_query_tokens = user_query.split()
+    bm25_scores = bm25.get_scores(user_query_tokens)
     combined_scores = []
     for i, document in enumerate(documents):
-        document_embedding = rerank_model.encode(document) 
-        cos_sim = cosine_similarity([user_query_embedding], [document_embedding])[0][0]  
-        combined_score = 0.7 * cos_sim + 0.3 * tfidf_scores[i]  
+        document_embedding = rerank_model.encode(document)
+        cos_sim = cosine_similarity([user_query_embedding], [document_embedding])[0][0]
+        combined_score = 0.7 * cos_sim + 0.3 * bm25_scores[i]
         combined_scores.append(combined_score)
     
     results_with_scores = [(documents[i], combined_scores[i]) for i in range(len(documents))]
     results_with_scores.sort(key=lambda x: x[1], reverse=True)
+    
     top_results = [results_with_scores[i][0] for i in range(min(3, len(documents)))]
-    return top_results
+    combined_string = "\n----------------------------------------------------------------\n".join(top_results)
+    return combined_string
