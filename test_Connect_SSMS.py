@@ -2,7 +2,7 @@ import pyodbc
 
 # Thông tin kết nối
 server = 'DESKTOP-B86U75E'
-database = 'ChatBotDB'
+database = 'Law_ChatBot_DB'
 
 # Chuỗi kết nối với Windows Authentication
 conn_string = f"DRIVER={{SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes"
