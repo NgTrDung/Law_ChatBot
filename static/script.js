@@ -177,6 +177,9 @@ function sendMessage() {
         </div>
     `);
 
+    // Lưu tin nhắn của người dùng vào database
+    saveMessage(currentSessionId, 'user', query);
+
     $userInput.val('');
     $chatOutput.scrollTop($chatOutput.prop('scrollHeight'));
 
@@ -198,11 +201,87 @@ function sendMessage() {
             setTimeout(() => {
                 $typingIndicator.remove();
                 processResponse(data); // Sử dụng processResponse để xử lý phản hồi
+
+                // Lưu tin nhắn của chatbot vào database
+                saveMessage(currentSessionId, 'bot', data.answer);
+
                 $chatOutput.scrollTop($chatOutput.prop('scrollHeight'));
                 isLoading = false;
                 updateSendButtonState();
                 $('#loading-indicator').text("");
             }, 800);
+        }
+    });
+}
+
+/* ----------------------------------------------------- */
+
+// Biến lưu session ID
+let currentSessionId = null;
+
+// Hàm khởi tạo session mới
+function startNewSession() {
+    $.ajax({
+        url: 'http://127.0.0.1:5000/start-session',
+        type: 'POST',
+        success: function(response) {
+            currentSessionId = response.session_id; // Lưu session ID
+            localStorage.setItem('session_id', currentSessionId); // Lưu vào localStorage
+            console.log("New session started with ID:", currentSessionId);
+            
+            // Xóa khung chat và hiển thị tin nhắn mặc định
+            $('#chat-output').empty();
+            $('#relevant-documents-container').empty();
+            const defaultMessage = `
+                <div class="chat-message bot">
+                    <div class="avatar bot-avatar" style="background-image: url('https://png.pngtree.com/png-vector/20230225/ourmid/pngtree-smart-chatbot-cartoon-clipart-png-image_6620453.png');"></div>
+                    <div class="message">Hello! How can I help you today?</div>
+                </div>
+            `;
+            $('#chat-output').append(defaultMessage);
+        },
+        error: function() {
+            alert("Error: Unable to start new session.");
+        }
+    });
+}
+
+// Kiểm tra session ID khi tải trang
+$(document).ready(function() {
+    const savedSessionId = localStorage.getItem('session_id'); // Lấy session ID từ localStorage
+    if (savedSessionId) {
+        currentSessionId = savedSessionId; // Sử dụng session ID cũ
+        console.log("Using existing session with ID:", currentSessionId);
+    } else {
+        startNewSession(); // Tạo session mới nếu chưa có
+    }
+});
+
+// Sự kiện click cho "New Chat"
+$('#sidebar a:contains("New Chat")').on('click', function(event) {
+    event.preventDefault();
+    if (confirm("Are you sure you want to start a new chat session?")) {
+        localStorage.removeItem('session_id'); // Xóa session ID cũ
+        startNewSession(); // Tạo session mới
+    }
+});
+
+// Hàm lưu tin nhắn vào server
+function saveMessage(sessionId, sender, message) {
+    $.ajax({
+        url: 'http://127.0.0.1:5000/save-message',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            session_id: sessionId,
+            sender: sender,
+            message: message
+        }),
+        success: function(response) {
+            console.log("Message saved:", response);
+        },
+        error: function() {
+            console.error("Error saving message.");
         }
     });
 }

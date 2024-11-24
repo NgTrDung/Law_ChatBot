@@ -14,6 +14,69 @@ key_manager = APIKeyManager(APIS_GEMINI_LIST)
 
 app = Flask(__name__)
 
+#-----------------------------------------------------------#
+
+
+
+import pyodbc  # Thư viện để kết nối với SQL Server
+
+# Hàm kết nối với database SQL Server
+def get_db_connection():
+    conn = pyodbc.connect(
+        'DRIVER={SQL Server};'
+        'SERVER=DESKTOP-B86U75E;'
+        'DATABASE=Law_ChatBot_DB;'
+        'Trusted_Connection=yes;'
+    )
+
+    return conn
+
+@app.route('/start-session', methods=['POST'])
+def start_session():
+    # Kết nối tới database
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Thêm bản ghi mới vào bảng Chat_Sessions
+    cursor.execute("INSERT INTO Chat_Sessions (create_at) OUTPUT INSERTED.id VALUES (GETDATE())")
+    session_id = cursor.fetchone()[0]  # Lấy ID của phiên vừa tạo
+    
+    conn.commit()  # Xác nhận thay đổi
+    conn.close()  # Đóng kết nối
+    
+    # Trả về ID của session
+    return jsonify({'session_id': session_id})
+
+@app.route('/save-message', methods=['POST'])
+def save_message():
+    # Lấy dữ liệu từ yêu cầu POST
+    data = request.json
+    session_id = data['session_id']
+    sender = data['sender']
+    message = data['message']
+
+    # Kết nối tới database
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Thêm tin nhắn vào bảng Chat_Messages
+    cursor.execute(
+        """
+        INSERT INTO Chat_Messages (session_id, sender, message, send_at)
+        VALUES (?, ?, ?, GETDATE())
+        """,
+        (session_id, sender, message)
+    )
+    conn.commit()  # Xác nhận thay đổi
+    conn.close()  # Đóng kết nối
+
+    return jsonify({'status': 'success', 'message': 'Message saved successfully'})
+
+
+
+
+#-----------------------------------------------------------#
+
 @app.route('/')
 def index():
     return render_template('index.html')
