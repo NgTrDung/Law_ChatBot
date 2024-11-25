@@ -15,7 +15,7 @@ key_manager = APIKeyManager(APIS_GEMINI_LIST)
 app = Flask(__name__)
 
 #-----------------------------------------------------------#
-
+# CONNECT AND OPERATION DATABASE IN SSMS #
 
 
 import pyodbc  # Thư viện để kết nối với SQL Server
