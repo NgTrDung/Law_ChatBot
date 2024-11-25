@@ -314,7 +314,7 @@ function loadChatSessions() {
                     </div>
                 `);
 
-                // Gắn sự kiện click vào từng phiên chat
+                // Gắn sự kiện click để load lịch sử chat
                 sessionElement.on('click', function() {
                     loadChatHistory(session.id);
                 });
@@ -334,7 +334,38 @@ $(document).ready(function() {
 
 function loadChatHistory(sessionId) {
     console.log("Loading chat history for session ID:", sessionId);
-    // Xử lý logic hiển thị lịch sử chat cho phiên được chọn
+
+    //Xử lý hiển thị lịch sử chat
+    $.ajax({
+        url: `http://127.0.0.1:5000/get-chat-history/${sessionId}`,
+        type: 'GET',
+        success: function(response) {
+            const chatHistory = response.chat_history;
+            const $chatOutput = $('#chat-output');
+            $chatOutput.empty(); // Xóa khung chat hiện tại
+
+            // Duyệt qua lịch sử chat và hiển thị từng tin nhắn
+            chatHistory.forEach(chat => {
+                const isBot = chat.sender === 'bot';
+                const messageHtml = `
+                    <div class="chat-message ${isBot ? 'bot' : 'user'}">
+                        <div class="avatar ${isBot ? 'bot-avatar' : 'user-avatar'}" 
+                             style="background-image: url('${isBot ? 'https://png.pngtree.com/png-vector/20230225/ourmid/pngtree-smart-chatbot-cartoon-clipart-png-image_6620453.png' : 'https://media.istockphoto.com/id/1300845620/vector/user-icon-flat-isolated-on-white-background-user-symbol-vector-illustration.jpg?s=612x612&w=0&k=20&c=yBeyba0hUkh14_jgv1OKqIH0CCSWU_4ckRkAoy2p73o='}');">
+                        </div>
+                        <div class="message">${chat.message}</div>
+                    </div>
+                `;
+                $chatOutput.append(messageHtml);
+            });
+
+            // Lưu session ID hiện tại
+            currentSessionId = sessionId;
+            localStorage.setItem('session_id', sessionId); // Cập nhật localStorage
+        },
+        error: function() {
+            console.error("Error loading chat history.");
+        }
+    });
 }
 
 function addChatSessionToSidebar(sessionId, firstMessage) {

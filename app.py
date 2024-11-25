@@ -109,6 +109,35 @@ def get_sessions():
 
     return jsonify({'sessions': session_list})
 
+@app.route('/get-chat-history/<int:session_id>', methods=['GET'])
+def get_chat_history(session_id):
+    # Kết nối tới database
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Lấy lịch sử tin nhắn của phiên chat
+    query = """
+    SELECT sender, message, send_at 
+    FROM Chat_Messages 
+    WHERE session_id = ? 
+    ORDER BY send_at ASC
+    """
+    cursor.execute(query, (session_id,))
+    messages = cursor.fetchall()
+
+    conn.close()
+
+    # Chuyển đổi dữ liệu thành danh sách JSON
+    chat_history = []
+    for message in messages:
+        chat_history.append({
+            'sender': message[0],
+            'message': message[1],
+            'send_at': message[2].strftime('%Y-%m-%d %H:%M:%S')
+        })
+
+    return jsonify({'chat_history': chat_history})
+
 
 
 #-----------------------------------------------------------#
