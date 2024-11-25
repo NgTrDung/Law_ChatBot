@@ -229,11 +229,11 @@ function startNewSession() {
     $.ajax({
         url: 'http://127.0.0.1:5000/start-session',
         type: 'POST',
-        success: function(response) {
+        success: function (response) {
             currentSessionId = response.session_id; // Lưu session ID
             localStorage.setItem('session_id', currentSessionId); // Lưu vào localStorage
             console.log("New session started with ID:", currentSessionId);
-            
+
             // Xóa khung chat và hiển thị tin nhắn mặc định
             $('#chat-output').empty();
             $('#relevant-documents-container').empty();
@@ -245,24 +245,25 @@ function startNewSession() {
             `;
             $('#chat-output').append(defaultMessage);
         },
-        error: function() {
+        error: function () {
             alert("Error: Unable to start new session.");
         }
     });
 }
 
 // Kiểm tra session ID khi tải trang
-$(document).ready(function() {
+$(document).ready(function () {
     const savedSessionId = localStorage.getItem('session_id'); // Lấy session ID từ localStorage
     if (savedSessionId) {
-        currentSessionId = savedSessionId; // Sử dụng session ID cũ
-        console.log("Using existing session with ID:", currentSessionId);
+        currentSessionId = savedSessionId; // Gán lại session ID hiện tại
+        console.log("Restoring chat session with ID:", currentSessionId);
+        loadChatHistory(currentSessionId); // Tải lại lịch sử chat
     } else {
         startNewSession(); // Tạo session mới nếu chưa có
     }
 });
 
-$('#new-chat').on('click', function(event) {
+$('#new-chat').on('click', function (event) {
     event.preventDefault();
     if (confirm("Are you sure you want to start a new chat session?")) {
         localStorage.removeItem('session_id'); // Xóa session ID cũ
@@ -332,14 +333,15 @@ $(document).ready(function() {
     loadChatSessions(); // Tải danh sách các phiên chat
 });
 
+// Hàm tải lịch sử chat của phiên cụ thể
 function loadChatHistory(sessionId) {
     console.log("Loading chat history for session ID:", sessionId);
 
-    //Xử lý hiển thị lịch sử chat
+    // Gọi API để lấy lịch sử chat
     $.ajax({
         url: `http://127.0.0.1:5000/get-chat-history/${sessionId}`,
         type: 'GET',
-        success: function(response) {
+        success: function (response) {
             const chatHistory = response.chat_history;
             const $chatOutput = $('#chat-output');
             $chatOutput.empty(); // Xóa khung chat hiện tại
@@ -358,11 +360,11 @@ function loadChatHistory(sessionId) {
                 $chatOutput.append(messageHtml);
             });
 
-            // Lưu session ID hiện tại
+            // Cập nhật session ID hiện tại
             currentSessionId = sessionId;
-            localStorage.setItem('session_id', sessionId); // Cập nhật localStorage
+            localStorage.setItem('session_id', sessionId); // Lưu lại session ID
         },
-        error: function() {
+        error: function () {
             console.error("Error loading chat history.");
         }
     });

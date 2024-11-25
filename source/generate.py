@@ -7,7 +7,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from rank_bm25 import BM25Okapi
 
-model = AutoModelForQuestionAnswering.from_pretrained("quanghuy123/fine-tuning-bert-for-QA",token='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')
+model =AutoModelForQuestionAnswering.from_pretrained('quanghuy123/fine-tuning-bert-for-Question-Answer', token='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')
 tokenizer = AutoTokenizer.from_pretrained('google-bert/bert-base-multilingual-cased')
 MODEL_RERANK = "bkai-foundation-models/vietnamese-bi-encoder"
 rerank_model = SentenceTransformer(MODEL_RERANK)
