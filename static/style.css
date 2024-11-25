@@ -318,3 +318,32 @@ button:disabled {
     line-height: 1.5;
     text-align: left;
 }
+
+/*-------------------------------------------------------------------*/
+
+.chat-sessions {
+    margin-top: 20px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.chat-session {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.chat-session:hover {
+    background-color: #ECECEC;
+}
+
+.chat-session-content {
+    font-size: 14px;
+    color: #333;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}

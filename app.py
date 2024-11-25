@@ -72,6 +72,42 @@ def save_message():
 
     return jsonify({'status': 'success', 'message': 'Message saved successfully'})
 
+@app.route('/get-sessions', methods=['GET'])
+def get_sessions():
+    # Kết nối tới database
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Lấy danh sách các phiên chat có ít nhất một tin nhắn từ user
+    query = """
+    SELECT 
+        cs.id, 
+        cs.create_at, 
+        (SELECT TOP 1 message FROM Chat_Messages 
+         WHERE session_id = cs.id AND sender = 'user' 
+         ORDER BY send_at ASC) AS first_message
+    FROM Chat_Sessions cs
+    WHERE EXISTS (
+        SELECT 1 FROM Chat_Messages 
+        WHERE session_id = cs.id AND sender = 'user'
+    )
+    ORDER BY cs.create_at DESC
+    """
+    cursor.execute(query)
+    sessions = cursor.fetchall()
+
+    conn.close()
+
+    # Chuyển đổi dữ liệu thành danh sách JSON
+    session_list = []
+    for session in sessions:
+        session_list.append({
+            'id': session[0],
+            'create_at': session[1],
+            'first_message': session[2]
+        })
+
+    return jsonify({'sessions': session_list})
 
 
 

@@ -180,6 +180,11 @@ function sendMessage() {
     // Lưu tin nhắn của người dùng vào database
     saveMessage(currentSessionId, 'user', query);
 
+    // Kiểm tra và thêm phiên chat vào sidebar nếu là tin nhắn đầu tiên
+    if ($('#chat-sessions .chat-session[data-session-id="' + currentSessionId + '"]').length === 0) {
+        addChatSessionToSidebar(currentSessionId, query);
+    }
+
     $userInput.val('');
     $chatOutput.scrollTop($chatOutput.prop('scrollHeight'));
 
@@ -257,12 +262,12 @@ $(document).ready(function() {
     }
 });
 
-// Sự kiện click cho "New Chat"
-$('#sidebar a:contains("New Chat")').on('click', function(event) {
+$('#new-chat').on('click', function(event) {
     event.preventDefault();
     if (confirm("Are you sure you want to start a new chat session?")) {
         localStorage.removeItem('session_id'); // Xóa session ID cũ
         startNewSession(); // Tạo session mới
+        loadChatSessions(); // Cập nhật lại danh sách phiên chat
     }
 });
 
@@ -284,4 +289,71 @@ function saveMessage(sessionId, sender, message) {
             console.error("Error saving message.");
         }
     });
+}
+
+/* ---------------------------------------------------------- */
+
+function loadChatSessions() {
+    $.ajax({
+        url: 'http://127.0.0.1:5000/get-sessions',
+        type: 'GET',
+        success: function(response) {
+            const sessions = response.sessions;
+            const $chatSessions = $('#chat-sessions');
+            $chatSessions.empty(); // Xóa nội dung cũ
+
+            sessions.forEach(session => {
+                const firstMessage = session.first_message || "No message yet";
+                const truncatedMessage = firstMessage.length > 30 
+                    ? firstMessage.substring(0, 30) + "..." 
+                    : firstMessage;
+
+                const sessionElement = $(`
+                    <div class="chat-session" data-session-id="${session.id}">
+                        <div class="chat-session-content">${truncatedMessage}</div>
+                    </div>
+                `);
+
+                // Gắn sự kiện click vào từng phiên chat
+                sessionElement.on('click', function() {
+                    loadChatHistory(session.id);
+                });
+
+                $chatSessions.append(sessionElement);
+            });
+        },
+        error: function() {
+            console.error("Error fetching chat sessions");
+        }
+    });
+}
+
+$(document).ready(function() {
+    loadChatSessions(); // Tải danh sách các phiên chat
+});
+
+function loadChatHistory(sessionId) {
+    console.log("Loading chat history for session ID:", sessionId);
+    // Xử lý logic hiển thị lịch sử chat cho phiên được chọn
+}
+
+function addChatSessionToSidebar(sessionId, firstMessage) {
+    const $chatSessions = $('#chat-sessions');
+    const truncatedMessage = firstMessage.length > 30 
+        ? firstMessage.substring(0, 30) + "..." 
+        : firstMessage;
+
+    const sessionElement = $(`
+        <div class="chat-session" data-session-id="${sessionId}">
+            <div class="chat-session-content">${truncatedMessage}</div>
+        </div>
+    `);
+
+    // Gắn sự kiện click vào phiên chat mới
+    sessionElement.on('click', function() {
+        loadChatHistory(sessionId);
+    });
+
+    // Thêm phiên chat mới vào đầu danh sách
+    $chatSessions.prepend(sessionElement);
 }
