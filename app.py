@@ -11,6 +11,7 @@ from source.T5Sum import summarize_text
 load_dotenv()
 APIS_GEMINI_LIST = os.getenv('APIS_GEMINI_LIST').split(',')
 key_manager = APIKeyManager(APIS_GEMINI_LIST)
+SERVER_SSMS = os.getenv("SERVER_SSMS")
 
 app = Flask(__name__)
 
@@ -24,7 +25,7 @@ import pyodbc  # Thư viện để kết nối với SQL Server
 def get_db_connection():
     conn = pyodbc.connect(
         'DRIVER={SQL Server};'
-        'SERVER=DESKTOP-B86U75E;'
+        f'SERVER={SERVER_SSMS};' ## Đổi tên server trong .env nếu test
         'DATABASE=Law_ChatBot_DB;'
         'Trusted_Connection=yes;'
     )
@@ -138,6 +139,21 @@ def get_chat_history(session_id):
 
     return jsonify({'chat_history': chat_history})
 
+@app.route('/delete-session/<int:session_id>', methods=['DELETE'])
+def delete_session(session_id):
+    # Kết nối tới database
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Xóa tin nhắn của phiên chat
+    cursor.execute("DELETE FROM Chat_Messages WHERE session_id = ?", (session_id,))
+    # Xóa phiên chat
+    cursor.execute("DELETE FROM Chat_Sessions WHERE id = ?", (session_id,))
+
+    conn.commit()  # Xác nhận thay đổi
+    conn.close()  # Đóng kết nối
+
+    return jsonify({'status': 'success', 'message': 'Session deleted successfully'})
 
 
 #-----------------------------------------------------------#

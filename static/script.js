@@ -253,14 +253,10 @@ function startNewSession() {
 
 // Kiểm tra session ID khi tải trang
 $(document).ready(function () {
-    const savedSessionId = localStorage.getItem('session_id'); // Lấy session ID từ localStorage
-    if (savedSessionId) {
-        currentSessionId = savedSessionId; // Gán lại session ID hiện tại
-        console.log("Restoring chat session with ID:", currentSessionId);
-        loadChatHistory(currentSessionId); // Tải lại lịch sử chat
-    } else {
-        startNewSession(); // Tạo session mới nếu chưa có
-    }
+    const $inputArea = $('#user-query');  // Sử dụng id 'user-query' thay vì class 'input-area'
+    // Vô hiệu hóa input và thay đổi placeholder
+    $inputArea.prop('disabled', true);  // Vô hiệu hóa input
+    $inputArea.attr('placeholder', 'Click "New Chat" to start new Session');  // Thay đổi placeholder
 });
 
 $('#new-chat').on('click', function (event) {
@@ -268,7 +264,16 @@ $('#new-chat').on('click', function (event) {
     if (confirm("Are you sure you want to start a new chat session?")) {
         localStorage.removeItem('session_id'); // Xóa session ID cũ
         startNewSession(); // Tạo session mới
+
+        const $inputArea = $('#user-query');  // Sử dụng id 'user-query' thay vì class 'input-area'
+        // Vô hiệu hóa input và thay đổi placeholder
+        $inputArea.prop('disabled', false);  // Vô hiệu hóa input
+        $inputArea.attr('placeholder', 'Type a message...');  // Thay đổi placeholder
+
         loadChatSessions(); // Cập nhật lại danh sách phiên chat
+
+        // Vô hiệu hóa Clear Chat khi bắt đầu một chat mới
+        $clearChatButton.removeClass('active').addClass('disabled').prop('disabled', true);
     }
 });
 
@@ -333,7 +338,26 @@ $(document).ready(function() {
     loadChatSessions(); // Tải danh sách các phiên chat
 });
 
-// Hàm tải lịch sử chat của phiên cụ thể
+// Hàm cập nhật trạng thái của nút Clear Chat
+function updateClearChatButtonState() {
+    // Kiểm tra nếu có tin nhắn từ người dùng trong chat-output
+    const userMessagesExist = $chatOutput.find('.chat-message.user').length > 0;
+    
+    // Nếu có tin nhắn từ người dùng, bật nút Clear Chat
+    if (userMessagesExist) {
+        $clearChatButton.removeClass('disabled').addClass('active').prop('disabled', false);
+    } else {
+        $clearChatButton.removeClass('active').addClass('disabled').prop('disabled', true);
+    }
+}
+
+// Lắng nghe sự kiện click vào một phiên chat từ sidebar
+$('.chat-session').on('click', function() {
+    // Khi người dùng click vào phiên chat, bật nút Clear Chat nếu có tin nhắn
+    updateClearChatButtonState();
+});
+
+// Hàm gọi khi load lại lịch sử chat của một phiên
 function loadChatHistory(sessionId) {
     console.log("Loading chat history for session ID:", sessionId);
 
@@ -359,6 +383,14 @@ function loadChatHistory(sessionId) {
                 `;
                 $chatOutput.append(messageHtml);
             });
+
+            const $inputArea = $('#user-query');  // Sử dụng id 'user-query' thay vì class 'input-area'
+            // Vô hiệu hóa input và thay đổi placeholder
+            $inputArea.prop('disabled', false);  // Vô hiệu hóa input
+            $inputArea.attr('placeholder', 'Type a message...');  // Thay đổi placeholder
+
+            // Sau khi tải xong lịch sử chat, cập nhật trạng thái nút Clear Chat
+            updateClearChatButtonState();
 
             // Cập nhật session ID hiện tại
             currentSessionId = sessionId;
@@ -390,3 +422,47 @@ function addChatSessionToSidebar(sessionId, firstMessage) {
     // Thêm phiên chat mới vào đầu danh sách
     $chatSessions.prepend(sessionElement);
 }
+
+// Lấy đối tượng của nút Clear Chat và chat-output
+const $clearChatButton = $('#clear-chat');
+const $chatOutput = $('#chat-output');
+
+// Lắng nghe sự kiện click vào nút Clear Chat
+$clearChatButton.on('click', function() {
+    if (confirm("Are you sure you want to clear this chat?")) {
+        // Xóa chat ở frontend
+        clearChatHistory();
+
+        const $inputArea = $('#user-query');  // Sử dụng id 'user-query' thay vì class 'input-area'
+        // Vô hiệu hóa input và thay đổi placeholder
+        $inputArea.prop('disabled', true);  // Vô hiệu hóa input
+        $inputArea.attr('placeholder', 'Click "New Chat" to start new Session');  // Thay đổi placeholder
+
+        // Gửi yêu cầu đến backend để xóa chat
+        deleteChatSession(currentSessionId);
+    }
+});
+
+// Hàm xóa toàn bộ lịch sử chat trong giao diện
+function clearChatHistory() {
+    $chatOutput.empty();
+    $('#relevant-documents-container').empty();
+    updateClearChatButtonState(); // Cập nhật lại trạng thái của nút Clear Chat
+}
+
+// Hàm gửi yêu cầu xóa chat tới backend
+function deleteChatSession(sessionId) {
+    $.ajax({
+        url: `http://127.0.0.1:5000/delete-session/${sessionId}`,
+        type: 'DELETE',
+        success: function(response) {
+            console.log('Session deleted successfully');
+            // Cập nhật lại danh sách các phiên chat trong sidebar
+            loadChatSessions();
+        },
+        error: function() {
+            console.error("Error deleting session.");
+        }
+    });
+}
+

@@ -29,3 +29,9 @@ GO
 
 --delete from Chat_Sessions
 --delete from Chat_Messages
+
+--DELETE FROM Chat_Sessions WHERE NOT EXISTS (
+--    SELECT 1
+--    FROM Chat_Messages
+--    WHERE Chat_Messages.session_id = Chat_Sessions.id
+--);
