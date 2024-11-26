@@ -5,8 +5,8 @@ import re
 from dotenv import load_dotenv
 from langchain_community.embeddings import HuggingFaceBgeEmbeddings
 from qdrant_client.models import Filter, FieldCondition, MatchValue
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
+from rank_bm25 import BM25Okapi
+from typing import List, Tuple
 from sentence_transformers import SentenceTransformer
 from langchain_qdrant import Qdrant
 
@@ -25,9 +25,6 @@ embeddings_bkai = HuggingFaceBgeEmbeddings(
     model_kwargs=model_kwargs,
     encode_kwargs=encode_kwargs
 )
-
-MODEL_RERANK = "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
-rerank_model = SentenceTransformer(MODEL_RERANK)
 
 exist_ASMK_Collection = Qdrant.from_existing_collection(
     embedding = embeddings_bkai,
@@ -148,43 +145,48 @@ def search_With_Similarity_Queries(user_query: str, key_manager):
     # Trả về danh sách kết quả duy nhất, với các giá trị từ dictionary
     return list(unique_results.values())
 
-def rerank_By_Cosin_TF_IDF(user_query, unique_results, rerank_model = rerank_model):
-    # Tạo danh sách các doc.page_content từ unique_results
-    documents = [doc.page_content for doc, _ in unique_results]
+def rerank_By_BM25(user_query: str, unique_results: List[Tuple]) -> List[Tuple]:
+    """
+    Rerank documents using BM25 and combine it with original scores.
+    """
+    # Lấy nội dung từ unique_results
+    doc_contents = [doc.page_content for doc, _ in unique_results if doc.page_content]
     
-    # Tính cosine similarity
-    user_query_embedding = rerank_model.encode(user_query)
-    document_embeddings = rerank_model.encode(documents)
-    cosine_similarities = cosine_similarity([user_query_embedding], document_embeddings)[0]
+    # Kiểm tra tài liệu hợp lệ
+    if not doc_contents:
+        raise ValueError("Không có nội dung tài liệu hợp lệ để xử lý BM25.")
 
-    # Tính TF-IDF
-    vectorizer = TfidfVectorizer()
-    tfidf_matrix = vectorizer.fit_transform([user_query] + documents)
-    tfidf_scores = tfidf_matrix.toarray()[0][1:]  # Lấy chỉ số TF-IDF cho các documents
+    # Tokenize các tài liệu và truy vấn
+    tokenized_docs = [doc.split() for doc in doc_contents]
+    query_tokens = user_query.split()
 
-    # Tính điểm tổng hợp
-    combined_scores = []
-    for cos_sim, tfidf_score in zip(cosine_similarities, tfidf_scores):
-        combined_score = 0.7 * cos_sim + 0.3 * tfidf_score
-        combined_scores.append(combined_score)
+    # Tính điểm BM25
+    bm25 = BM25Okapi(tokenized_docs)
+    bm25_scores = bm25.get_scores(query_tokens)
 
-    # Tạo danh sách kết quả với điểm số
-    results_with_scores = [(unique_results[i][0], unique_results[i][1], combined_scores[i]) for i in range(len(unique_results))]
+    # Kết hợp điểm BM25 với điểm gốc
+    combined_scores = [
+        (doc, 0.7 * origin_score + 0.3 * bm25_score)
+        for (doc, origin_score), bm25_score in zip(unique_results, bm25_scores)
+    ]
 
-    # Sắp xếp kết quả theo điểm số giảm dần
-    results_with_scores.sort(key=lambda x: x[2], reverse=True)
+    # Sắp xếp lại thứ hạng theo điểm tổng hợp
+    reranked_results = sorted(combined_scores, key=lambda x: x[1], reverse=True)
 
-    # Lấy top 5 kết quả
-    top_results = results_with_scores[:5]
-    
-    return top_results
+    # Trả về top 5 kết quả
+    return reranked_results[:5]
 
 def get_Article_Section_Content_Result(user_Query, key_manager):
+    # Tìm kiếm tài liệu bằng truy vấn
     article_Section_Documents = search_With_Similarity_Queries(user_Query, key_manager)
-    rerank_Article_Section_Documents = rerank_By_Cosin_TF_IDF(user_Query, article_Section_Documents)
+    
+    # Rerank các tài liệu sử dụng BM25
+    rerank_Article_Section_Documents = rerank_By_BM25(user_Query, article_Section_Documents)
 
-    # Tạo list chỉ chứa doc.page_content từ danh sách kết quả
-    article_Section_Content_Results = [result[0].metadata["combine_Article_Content"] for result in rerank_Article_Section_Documents]
+    # Tạo danh sách chứa nội dung từ kết quả đã rerank
+    article_Section_Content_Results = [
+        result[0].metadata["combine_Article_Content"] for result in rerank_Article_Section_Documents
+    ]
     return article_Section_Content_Results
 
 def extract_Unique_Metadata(top_results):
@@ -247,15 +249,48 @@ def search_Article_Documents(list_Metadata, top_k = 1):
 
 def get_Article_Content_Results(user_Query, key_manager):
     article_Section_Documents = search_With_Similarity_Queries(user_Query, key_manager)
-    rerank_Article_Section_Documents = rerank_By_Cosin_TF_IDF(user_Query, article_Section_Documents)
+    rerank_Article_Section_Documents = rerank_By_BM25(user_Query, article_Section_Documents)
     list_Metadata = extract_Unique_Metadata(rerank_Article_Section_Documents)
     article_Documents = search_Article_Documents(list_Metadata)
     
     article_Content_Resuls = []
+    lst_Article_Quote = []
+
     for doc, score in article_Documents:
         article_Content_Resuls.append(doc.metadata["combine_Article_Content"])
 
-    return article_Content_Resuls
+        # Trích xuất thông tin từ metadata
+        loai_van_ban = doc.metadata.get("loai_van_ban", "N/A")
+        noi_ban_hanh = doc.metadata.get("noi_ban_hanh", "N/A")
+        so_hieu = doc.metadata.get("so_hieu", "N/A")
+        linhvuc_nganh = doc.metadata.get("linhvuc_nganh", "N/A")
+        ngay_ban_hanh = doc.metadata.get("ngay_ban_hanh", "N/A")
+        ngay_hieu_luc = doc.metadata.get("ngay_hieu_luc", "N/A")
+        chu_de = doc.metadata.get("chu_de", "N/A")
+        chapter = doc.metadata.get("Chapter", "N/A")
+        section = doc.metadata.get("Section", "N/A")
+        mini_section = doc.metadata.get("Mini-Section", "N/A")
+        combine_Article_Content = doc.metadata.get("combine_Article_Content", "N/A")
+
+        # Định dạng nội dung quote
+        formatted_quote = f"""\
+                        Loại văn bản: {loai_van_ban}
+                        Nơi ban hành: {noi_ban_hanh}
+                        Số hiệu: {so_hieu}
+                        Lĩnh vực - ngành: {linhvuc_nganh}
+                        Ngày ban hành: {ngay_ban_hanh}
+                        Ngày hiệu lực: {ngay_hieu_luc}
+                        Chủ đề: {chu_de}
+                        Chương: {chapter}
+                        Mục: {section}
+                        Tiểu mục: {mini_section}
+                        <=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=>
+                        {combine_Article_Content}
+                        """
+        # Thêm vào danh sách lst_Article_Quote
+        lst_Article_Quote.append(formatted_quote)
+
+    return article_Content_Resuls, lst_Article_Quote
 
 def search_Article_Section(user_Query, key_manager):
     article_Section_Content_Results = get_Article_Section_Content_Result(user_Query, key_manager)
@@ -263,6 +298,6 @@ def search_Article_Section(user_Query, key_manager):
     return article_Section_Content_Results
 
 def search_Article(user_Query, key_manager):
-    article_Document_Results = get_Article_Content_Results(user_Query, key_manager)
+    article_Document_Results, lst_Article_Quote = get_Article_Content_Results(user_Query, key_manager)
     
-    return article_Document_Results
+    return article_Document_Results, lst_Article_Quote

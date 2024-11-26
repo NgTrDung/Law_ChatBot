@@ -318,3 +318,54 @@ button:disabled {
     line-height: 1.5;
     text-align: left;
 }
+
+/*-------------------------------------------------------------------*/
+
+.chat-sessions {
+    margin-top: 20px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.chat-session {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.chat-session:hover {
+    background-color: #ECECEC;
+}
+
+.chat-session-content {
+    font-size: 14px;
+    color: #333;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Mặc định Clear Chat bị disabled */
+#clear-chat.disabled {
+    color: #A9A9A9; /* Màu xám nhạt */
+    pointer-events: none; /* Vô hiệu hóa click */
+    font-weight: normal; /* Chữ không in đậm */
+    text-decoration: none; /* Bỏ gạch chân */
+}
+
+/* Khi active (class 'active' được thêm vào) */
+#clear-chat.active {
+    color: #FF0000; /* Màu đỏ */
+    font-weight: bold; /* In đậm */
+    pointer-events: auto; /* Cho phép click */
+}
+
+/* Hover khi active */
+#clear-chat.active:hover {
+    color: #B22222; /* Màu đỏ tối hơn */
+    font-weight: bold; /* In đậm */
+}
+

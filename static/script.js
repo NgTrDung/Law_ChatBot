@@ -61,7 +61,7 @@ function typeMessage($element, message, callback) {
             updateSendButtonState(); // Cập nhật trạng thái nút Send sau khi hoàn thành
             if (callback) callback(); // Gọi callback sau khi in xong
         }
-    }, 50); // Điều chỉnh tốc độ gõ chữ (50ms mỗi từ)
+    }, 25); // Điều chỉnh tốc độ gõ chữ (25ms mỗi từ)
 }
 
 function updateSendButtonState() {
@@ -137,14 +137,8 @@ function processResponse(data) {
     const { answer, lst_Relevant_Documents } = data;
     let formattedAnswer = "";
 
-    // Chuẩn bị nội dung phản hồi của chatbot với xuống dòng bằng <br>
-    if (Array.isArray(answer)) {
-        answer.forEach((ans, index) => {
-            formattedAnswer += `Answer ${index + 1}: ${ans.replace(/\n/g, "<br>")}<br><br>`;
-        });
-    } else {
-        formattedAnswer = answer.replace(/\n/g, "<br>");
-    }
+    // Vì `answer` bây giờ là một chuỗi, chỉ cần thay thế ký tự xuống dòng bằng <br> để hiển thị đúng
+    formattedAnswer = answer.replace(/\n/g, "<br>");
 
     // Tạo một phần tử trống để từng từ sẽ được gõ vào đó
     const $chatOutput = $('#chat-output');
@@ -156,9 +150,9 @@ function processResponse(data) {
     `);
     $chatOutput.append($botMessage);
 
-    // Gọi typeMessage với callback để hiển thị tài liệu liên quan sau khi in xong câu trả lời
+    // Gọi typeMessage để hiển thị từng từ của câu trả lời
     typeMessage($botMessage.find(".message"), formattedAnswer, () => {
-        // Gọi hàm để hiển thị các thẻ từ lst_Relevant_Documents
+        // Sau khi hoàn thành việc hiển thị câu trả lời, gọi hàm hiển thị tài liệu liên quan
         displayRelevantDocuments(lst_Relevant_Documents);
     });
 }
@@ -183,6 +177,14 @@ function sendMessage() {
         </div>
     `);
 
+    // Lưu tin nhắn của người dùng vào database
+    saveMessage(currentSessionId, 'user', query);
+
+    // Kiểm tra và thêm phiên chat vào sidebar nếu là tin nhắn đầu tiên
+    if ($('#chat-sessions .chat-session[data-session-id="' + currentSessionId + '"]').length === 0) {
+        addChatSessionToSidebar(currentSessionId, query);
+    }
+
     $userInput.val('');
     $chatOutput.scrollTop($chatOutput.prop('scrollHeight'));
 
@@ -204,6 +206,10 @@ function sendMessage() {
             setTimeout(() => {
                 $typingIndicator.remove();
                 processResponse(data); // Sử dụng processResponse để xử lý phản hồi
+
+                // Lưu tin nhắn của chatbot vào database
+                saveMessage(currentSessionId, 'bot', data.answer);
+
                 $chatOutput.scrollTop($chatOutput.prop('scrollHeight'));
                 isLoading = false;
                 updateSendButtonState();
@@ -212,3 +218,251 @@ function sendMessage() {
         }
     });
 }
+
+/* ----------------------------------------------------- */
+
+// Biến lưu session ID
+let currentSessionId = null;
+
+// Hàm khởi tạo session mới
+function startNewSession() {
+    $.ajax({
+        url: 'http://127.0.0.1:5000/start-session',
+        type: 'POST',
+        success: function (response) {
+            currentSessionId = response.session_id; // Lưu session ID
+            localStorage.setItem('session_id', currentSessionId); // Lưu vào localStorage
+            console.log("New session started with ID:", currentSessionId);
+
+            // Xóa khung chat và hiển thị tin nhắn mặc định
+            $('#chat-output').empty();
+            $('#relevant-documents-container').empty();
+            const defaultMessage = `
+                <div class="chat-message bot">
+                    <div class="avatar bot-avatar" style="background-image: url('https://png.pngtree.com/png-vector/20230225/ourmid/pngtree-smart-chatbot-cartoon-clipart-png-image_6620453.png');"></div>
+                    <div class="message">Hello! How can I help you today?</div>
+                </div>
+            `;
+            $('#chat-output').append(defaultMessage);
+        },
+        error: function () {
+            alert("Error: Unable to start new session.");
+        }
+    });
+}
+
+// Kiểm tra session ID khi tải trang
+$(document).ready(function () {
+    const $inputArea = $('#user-query');  // Sử dụng id 'user-query' thay vì class 'input-area'
+    // Vô hiệu hóa input và thay đổi placeholder
+    $inputArea.prop('disabled', true);  // Vô hiệu hóa input
+    $inputArea.attr('placeholder', 'Click "New Chat" to start new Session');  // Thay đổi placeholder
+});
+
+$('#new-chat').on('click', function (event) {
+    event.preventDefault();
+    if (confirm("Are you sure you want to start a new chat session?")) {
+        localStorage.removeItem('session_id'); // Xóa session ID cũ
+        startNewSession(); // Tạo session mới
+
+        const $inputArea = $('#user-query');  // Sử dụng id 'user-query' thay vì class 'input-area'
+        // Vô hiệu hóa input và thay đổi placeholder
+        $inputArea.prop('disabled', false);  // Vô hiệu hóa input
+        $inputArea.attr('placeholder', 'Type a message...');  // Thay đổi placeholder
+
+        loadChatSessions(); // Cập nhật lại danh sách phiên chat
+
+        // Vô hiệu hóa Clear Chat khi bắt đầu một chat mới
+        $clearChatButton.removeClass('active').addClass('disabled').prop('disabled', true);
+    }
+});
+
+// Hàm lưu tin nhắn vào server
+function saveMessage(sessionId, sender, message) {
+    $.ajax({
+        url: 'http://127.0.0.1:5000/save-message',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            session_id: sessionId,
+            sender: sender,
+            message: message
+        }),
+        success: function(response) {
+            console.log("Message saved:", response);
+        },
+        error: function() {
+            console.error("Error saving message.");
+        }
+    });
+}
+
+/* ---------------------------------------------------------- */
+
+function loadChatSessions() {
+    $.ajax({
+        url: 'http://127.0.0.1:5000/get-sessions',
+        type: 'GET',
+        success: function(response) {
+            const sessions = response.sessions;
+            const $chatSessions = $('#chat-sessions');
+            $chatSessions.empty(); // Xóa nội dung cũ
+
+            sessions.forEach(session => {
+                const firstMessage = session.first_message || "No message yet";
+                const truncatedMessage = firstMessage.length > 30 
+                    ? firstMessage.substring(0, 30) + "..." 
+                    : firstMessage;
+
+                const sessionElement = $(`
+                    <div class="chat-session" data-session-id="${session.id}">
+                        <div class="chat-session-content">${truncatedMessage}</div>
+                    </div>
+                `);
+
+                // Gắn sự kiện click để load lịch sử chat
+                sessionElement.on('click', function() {
+                    loadChatHistory(session.id);
+                });
+
+                $chatSessions.append(sessionElement);
+            });
+        },
+        error: function() {
+            console.error("Error fetching chat sessions");
+        }
+    });
+}
+
+$(document).ready(function() {
+    loadChatSessions(); // Tải danh sách các phiên chat
+});
+
+// Hàm cập nhật trạng thái của nút Clear Chat
+function updateClearChatButtonState() {
+    // Kiểm tra nếu có tin nhắn từ người dùng trong chat-output
+    const userMessagesExist = $chatOutput.find('.chat-message.user').length > 0;
+    
+    // Nếu có tin nhắn từ người dùng, bật nút Clear Chat
+    if (userMessagesExist) {
+        $clearChatButton.removeClass('disabled').addClass('active').prop('disabled', false);
+    } else {
+        $clearChatButton.removeClass('active').addClass('disabled').prop('disabled', true);
+    }
+}
+
+// Lắng nghe sự kiện click vào một phiên chat từ sidebar
+$('.chat-session').on('click', function() {
+    // Khi người dùng click vào phiên chat, bật nút Clear Chat nếu có tin nhắn
+    updateClearChatButtonState();
+});
+
+// Hàm gọi khi load lại lịch sử chat của một phiên
+function loadChatHistory(sessionId) {
+    console.log("Loading chat history for session ID:", sessionId);
+
+    // Gọi API để lấy lịch sử chat
+    $.ajax({
+        url: `http://127.0.0.1:5000/get-chat-history/${sessionId}`,
+        type: 'GET',
+        success: function (response) {
+            const chatHistory = response.chat_history;
+            const $chatOutput = $('#chat-output');
+            $chatOutput.empty(); // Xóa khung chat hiện tại
+
+            // Duyệt qua lịch sử chat và hiển thị từng tin nhắn
+            chatHistory.forEach(chat => {
+                const isBot = chat.sender === 'bot';
+                const messageHtml = `
+                    <div class="chat-message ${isBot ? 'bot' : 'user'}">
+                        <div class="avatar ${isBot ? 'bot-avatar' : 'user-avatar'}" 
+                             style="background-image: url('${isBot ? 'https://png.pngtree.com/png-vector/20230225/ourmid/pngtree-smart-chatbot-cartoon-clipart-png-image_6620453.png' : 'https://media.istockphoto.com/id/1300845620/vector/user-icon-flat-isolated-on-white-background-user-symbol-vector-illustration.jpg?s=612x612&w=0&k=20&c=yBeyba0hUkh14_jgv1OKqIH0CCSWU_4ckRkAoy2p73o='}');">
+                        </div>
+                        <div class="message">${chat.message}</div>
+                    </div>
+                `;
+                $chatOutput.append(messageHtml);
+            });
+
+            const $inputArea = $('#user-query');  // Sử dụng id 'user-query' thay vì class 'input-area'
+            // Vô hiệu hóa input và thay đổi placeholder
+            $inputArea.prop('disabled', false);  // Vô hiệu hóa input
+            $inputArea.attr('placeholder', 'Type a message...');  // Thay đổi placeholder
+
+            // Sau khi tải xong lịch sử chat, cập nhật trạng thái nút Clear Chat
+            updateClearChatButtonState();
+
+            // Cập nhật session ID hiện tại
+            currentSessionId = sessionId;
+            localStorage.setItem('session_id', sessionId); // Lưu lại session ID
+        },
+        error: function () {
+            console.error("Error loading chat history.");
+        }
+    });
+}
+
+function addChatSessionToSidebar(sessionId, firstMessage) {
+    const $chatSessions = $('#chat-sessions');
+    const truncatedMessage = firstMessage.length > 30 
+        ? firstMessage.substring(0, 30) + "..." 
+        : firstMessage;
+
+    const sessionElement = $(`
+        <div class="chat-session" data-session-id="${sessionId}">
+            <div class="chat-session-content">${truncatedMessage}</div>
+        </div>
+    `);
+
+    // Gắn sự kiện click vào phiên chat mới
+    sessionElement.on('click', function() {
+        loadChatHistory(sessionId);
+    });
+
+    // Thêm phiên chat mới vào đầu danh sách
+    $chatSessions.prepend(sessionElement);
+}
+
+// Lấy đối tượng của nút Clear Chat và chat-output
+const $clearChatButton = $('#clear-chat');
+const $chatOutput = $('#chat-output');
+
+// Lắng nghe sự kiện click vào nút Clear Chat
+$clearChatButton.on('click', function() {
+    if (confirm("Are you sure you want to clear this chat?")) {
+        // Xóa chat ở frontend
+        clearChatHistory();
+
+        const $inputArea = $('#user-query');  // Sử dụng id 'user-query' thay vì class 'input-area'
+        // Vô hiệu hóa input và thay đổi placeholder
+        $inputArea.prop('disabled', true);  // Vô hiệu hóa input
+        $inputArea.attr('placeholder', 'Click "New Chat" to start new Session');  // Thay đổi placeholder
+
+        // Gửi yêu cầu đến backend để xóa chat
+        deleteChatSession(currentSessionId);
+    }
+});
+
+// Hàm xóa toàn bộ lịch sử chat trong giao diện
+function clearChatHistory() {
+    $chatOutput.empty();
+    $('#relevant-documents-container').empty();
+    updateClearChatButtonState(); // Cập nhật lại trạng thái của nút Clear Chat
+}
+
+// Hàm gửi yêu cầu xóa chat tới backend
+function deleteChatSession(sessionId) {
+    $.ajax({
+        url: `http://127.0.0.1:5000/delete-session/${sessionId}`,
+        type: 'DELETE',
+        success: function(response) {
+            console.log('Session deleted successfully');
+            // Cập nhật lại danh sách các phiên chat trong sidebar
+            loadChatSessions();
+        },
+        error: function() {
+            console.error("Error deleting session.");
+        }
+    });
+}
+

@@ -2,10 +2,9 @@ import numpy as np
 import torch
 from transformers import AutoTokenizer, AutoModelForQuestionAnswering
 from sentence_transformers import SentenceTransformer
-from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from rank_bm25 import BM25Okapi
-model = AutoModelForQuestionAnswering.from_pretrained("quanghuy123/fine-tuning-bert-for-QA",token='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')
+model =AutoModelForQuestionAnswering.from_pretrained('quanghuy123/fine-tuning-bert-for-Question-Answer', token='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')
 tokenizer = AutoTokenizer.from_pretrained('google-bert/bert-base-multilingual-cased')
 MODEL_RERANK = "bkai-foundation-models/vietnamese-bi-encoder"
 rerank_model = SentenceTransformer(MODEL_RERANK)
@@ -71,6 +70,5 @@ def rerank_By_Cosin_BM25(user_query, documents):
     results_with_scores = [(documents[i], combined_scores[i]) for i in range(len(documents))]
     results_with_scores.sort(key=lambda x: x[1], reverse=True)
     top_results = [results_with_scores[i][0] for i in range(min(3, len(documents)))]
-    combined_string = " ".join(top_results)
+    combined_string = "\n----------------------------------------------------------------\n".join(top_results)
     return combined_string
-
