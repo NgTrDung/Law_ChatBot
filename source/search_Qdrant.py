@@ -1,5 +1,5 @@
 import os
-import source.gemini_Generate_Queries as g_G_Q
+import gemini_Generate_Queries as g_G_Q
 import re
 
 from dotenv import load_dotenv
