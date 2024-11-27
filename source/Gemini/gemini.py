@@ -2,35 +2,71 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.output_parsers import StrOutputParser
 from typing import List, Tuple
+
 class Gemini():
     def __init__(self,key_manager,model_gemini) :
         self.key_manager=key_manager
         self.model_gemini=model_gemini
-    def query_generator(self,original_query: str) -> list[str]:
+
+    def query_generator(self, original_query: str) -> list[str]:
         query = original_query
         prompt = ChatPromptTemplate.from_messages(
             [
-                ("system", "Bạn là một trợ lý hữu ích và có nhiệm vụ tạo ra nhiều truy vấn tìm kiếm dựa trên một truy vấn gốc."),
-                ("human", """Tạo chính xác 3 câu truy vấn tìm kiếm liên quan đến: {original_query}. Mỗi câu truy vấn trên một dòng mới. 
-                Không được trả về nhiều hơn hoặc ít hơn 3 câu truy vấn. Đảm bảo không thêm bất kỳ văn bản nào khác ngoài 3 câu truy vấn này."""),
+                ("system", 
+                "Bạn là một trợ lý chuyên gia về pháp luật Việt Nam. Nhiệm vụ của bạn là tạo ra năm câu truy vấn tìm kiếm liên quan đến một câu hỏi pháp lý gốc. "
+                "Các câu truy vấn này cần phải có cấu trúc khác nhau, nhưng vẫn giữ nguyên nội dung và ý nghĩa của câu hỏi pháp lý ban đầu. "
+                "Mỗi câu truy vấn có thể thay đổi cách diễn đạt hoặc sắp xếp từ ngữ, nhưng mục tiêu là tạo ra các câu hỏi rõ ràng và dễ hiểu cho người tìm kiếm thông tin pháp lý. "
+                "Ví dụ: "
+                "- 'Điều kiện để thành lập doanh nghiệp tại Việt Nam là gì?' có thể đổi thành 'Thành lập doanh nghiệp tại Việt Nam cần những điều kiện gì?'"
+                "- 'Quyền lợi của người lao động khi tham gia bảo hiểm xã hội là gì?' có thể đổi thành 'Bảo hiểm xã hội mang lại quyền lợi gì cho người lao động?'"
+                "- 'Các bước thủ tục ly hôn theo quy định của pháp luật Việt Nam như thế nào?' có thể đổi thành 'Thủ tục ly hôn theo pháp luật Việt Nam bao gồm những bước nào?'"
+                "- 'Tôi có thể khởi kiện vì bị xâm phạm quyền lợi như thế nào?' có thể đổi thành 'Cách khởi kiện khi quyền lợi bị xâm phạm là gì?'"
+                "- 'Quyền lợi của người lao động khi bị sa thải theo quy định của pháp luật là gì?' có thể đổi thành 'Khi bị sa thải, người lao động có quyền lợi gì theo pháp luật Việt Nam?'"
+                
+                "- 'Điều 12 của Luật Doanh nghiệp số 68/2014/QH13 quy định như thế nào về việc thành lập doanh nghiệp?'"
+                " có thể đổi thành 'Luật Doanh nghiệp 68/2014/QH13 quy định về điều kiện thành lập doanh nghiệp tại Điều 12 như thế nào?'"
+                
+                "- 'Theo Luật Lao động số 45/2019/QH14, quyền lợi của người lao động khi tham gia bảo hiểm xã hội được quy định tại Chương III?'"
+                " có thể đổi thành 'Quyền lợi của người lao động khi tham gia bảo hiểm xã hội theo Luật Lao động số 45/2019/QH14 được quy định ở đâu?'"
+                
+                "- 'Công ty tôi có thể tham gia vào hợp đồng lao động theo Điều 16 của Bộ luật Lao động 2012 không?'"
+                " có thể đổi thành 'Bộ luật Lao động 2012 có quy định gì về hợp đồng lao động tại Điều 16 không?'"
+                
+                "- 'Thủ tục ly hôn theo pháp luật Việt Nam được quy định tại Điều 51 của Luật Hôn nhân và Gia đình 2014 như thế nào?'"
+                " có thể đổi thành 'Luật Hôn nhân và Gia đình 2014 quy định thủ tục ly hôn ở Điều 51 ra sao?'"
+                
+                "- 'Điều 10 của Luật Đầu tư 2020 quy định về đầu tư vào ngành nghề nào tại Việt Nam?'"
+                " có thể đổi thành 'Luật Đầu tư 2020 quy định ngành nghề nào được ưu tiên đầu tư tại Điều 10?'"
+                ),
+                ("human", f"Vui lòng tạo ra năm câu truy vấn tìm kiếm liên quan nhất đến: {original_query}. Chỉ trả về năm câu truy vấn, không giải thích gì thêm.")
             ]
         )
+
         model = ChatGoogleGenerativeAI(
             google_api_key=self.key_manager.get_next_key(),
             model=self.model_gemini,
             temperature=0
         )
+
         query_generator_chain = (
             prompt | model | StrOutputParser()
         )
+
         result = query_generator_chain.invoke({"original_query": query})
         generated_queries = result.strip().split('\n')
-        if len(generated_queries) > 3:
-            generated_queries = generated_queries[:len(generated_queries) - 1]
+
+        if len(generated_queries) > 5:
+            generated_queries = generated_queries[:5]
+
+        # Thêm câu gốc vào đầu danh sách kết quả
         queries = [query] + generated_queries
+
         return queries
+
+    
     def prompt_template(self,docs: List[Tuple], original_query: str) -> str:
         context = "\n".join([doc for doc in docs])
+
         response_prompt = ChatPromptTemplate.from_messages(
         [ ("system", "Bạn là một trợ lý chuyên gia về Pháp Luật Việt Nam. Nhiệm vụ của bạn là trả lời các câu hỏi liên quan đến Pháp Luật Việt Nam dựa trên thông tin đã được cung cấp."
             "Câu trả lời phải dựa trên thông tin được cung cấp và tuân thủ các yêu cầu trả lời sau."),
@@ -60,9 +96,10 @@ class Gemini():
                 6. Phong cách trình bày:
                 - Chuyên nghiệp, chính xác và phù hợp với ngữ cảnh Pháp Luật Việt Nam.
             """)
-        ]
-        )
+        ])
+
         return response_prompt
+    
     def generate_response(self,original_query: str, docs: List) -> str:
         response_model = ChatGoogleGenerativeAI(
             google_api_key=self.key_manager.get_next_key(),
@@ -71,6 +108,8 @@ class Gemini():
             max_tokens=3000,
             top_p=0.6,
         )
+
         response_chain = self.prompt_template(docs, original_query) | response_model | StrOutputParser()
         final_response = response_chain.invoke({"original_query": original_query}).strip()
+        
         return final_response 

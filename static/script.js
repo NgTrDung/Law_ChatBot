@@ -386,7 +386,7 @@ function loadChatHistory(sessionId) {
 
             const $inputArea = $('#user-query');  // Sử dụng id 'user-query' thay vì class 'input-area'
             // Vô hiệu hóa input và thay đổi placeholder
-            $inputArea.prop('disabled', false);  // Vô hiệu hóa input
+            $inputArea.prop('disabled', false);  // Mở input
             $inputArea.attr('placeholder', 'Type a message...');  // Thay đổi placeholder
 
             // Sau khi tải xong lịch sử chat, cập nhật trạng thái nút Clear Chat
