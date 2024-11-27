@@ -373,12 +373,19 @@ function loadChatHistory(sessionId) {
             // Duyệt qua lịch sử chat và hiển thị từng tin nhắn
             chatHistory.forEach(chat => {
                 const isBot = chat.sender === 'bot';
+                
+                // Chuyển các đoạn có dấu ** thành thẻ <strong> để in đậm
+                let formattedMessage = chat.message.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+                // Thay thế \n bằng <br> để hiển thị xuống dòng
+                formattedMessage = formattedMessage.replace(/\n/g, "<br>");
+
                 const messageHtml = `
                     <div class="chat-message ${isBot ? 'bot' : 'user'}">
                         <div class="avatar ${isBot ? 'bot-avatar' : 'user-avatar'}" 
                              style="background-image: url('${isBot ? 'https://png.pngtree.com/png-vector/20230225/ourmid/pngtree-smart-chatbot-cartoon-clipart-png-image_6620453.png' : 'https://media.istockphoto.com/id/1300845620/vector/user-icon-flat-isolated-on-white-background-user-symbol-vector-illustration.jpg?s=612x612&w=0&k=20&c=yBeyba0hUkh14_jgv1OKqIH0CCSWU_4ckRkAoy2p73o='}');">
                         </div>
-                        <div class="message">${chat.message}</div>
+                        <div class="message">${formattedMessage}</div>
                     </div>
                 `;
                 $chatOutput.append(messageHtml);
