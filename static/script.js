@@ -123,6 +123,7 @@ function processResponse(data) {
 
     // Vì `answer` bây giờ là một chuỗi, chỉ cần thay thế ký tự xuống dòng bằng <br> để hiển thị đúng
     formattedAnswer = answer.replace(/\n/g, "<br>");
+    formattedAnswer = formattedAnswer.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
     // Tạo một phần tử trống để từng từ sẽ được gõ vào đó
     const $chatOutput = $('#chat-output');
