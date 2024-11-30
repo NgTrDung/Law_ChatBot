@@ -2,10 +2,11 @@ import os
 
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify, render_template
-from source.Generate.generate import predict
+from source.Generate.generate import predict, results_Gemini
 from source.Function.search_Qdrant import  search_Article
 from source.Function.utils import find_relevant_contexts
 from source.Database.db_connection import DBConnection
+from source.Generate.T5Sum import summarize_text
 
 load_dotenv()
 
@@ -73,11 +74,15 @@ def index():
 def chatbot():
     user_input = request.json['query']
 
-    contexts, lst_Article_Quote = search_Article(user_input)
-    answer_candidates = predict(contexts,user_input)
-    lst_Relevant_Documents = find_relevant_contexts(lst_Article_Quote, answer_candidates)
+    article_Document_Results, lst_Article_Quote = search_Article(user_input)
+    lst_Answer_Predict, txt_Answer_Predict = predict(article_Document_Results, user_input)
+    txt_Sum_T5 = summarize_text(txt_Answer_Predict)
+    lst_Relevant_Documents = find_relevant_contexts(lst_Article_Quote, lst_Answer_Predict)
 
-    return jsonify({'answer': answer_candidates,'lst_Relevant_Documents': lst_Relevant_Documents})
+    return jsonify({
+        'answer': txt_Sum_T5,
+        'lst_Relevant_Documents': lst_Relevant_Documents
+    })
 
 if __name__ == '__main__':
     app.run(port=5000, debug=True)

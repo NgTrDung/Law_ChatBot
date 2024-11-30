@@ -1,6 +1,6 @@
 import os
-import utils as u
 
+from source.Function import utils as u
 from source.Gemini.gemini import Gemini
 from source.Gemini.apikeys_gemini import APIKeyManager
 from sentence_transformers import CrossEncoder

@@ -1,16 +1,19 @@
 import numpy as np
 import torch
+import os 
+
 from transformers import AutoTokenizer, AutoModelForQuestionAnswering
 from source.Gemini.apikeys_gemini import APIKeyManager
 from source.Gemini.gemini import Gemini
 from dotenv import load_dotenv
-import os 
+
 load_dotenv()
 MODEL_EXTRACT=os.getenv("GENERATE_MODEL_EXTRACT")
 TOKENIZER=os.getenv("GENERATE_MODEL_TOKENIZER")
+MODEL_GEMINI = os.getenv("MODEL_GEMIMI")
 APIS_GEMINI_LIST = os.getenv('APIS_GEMINI_LIST').split(',')
 key_manager = APIKeyManager(APIS_GEMINI_LIST)
-MODEL_GEMINI = os.getenv("MODEL_GEMIMI")
+
 model =AutoModelForQuestionAnswering.from_pretrained(MODEL_EXTRACT, token='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')
 tokenizer = AutoTokenizer.from_pretrained(TOKENIZER)
 MAX_LENGTH = 512
@@ -18,8 +21,12 @@ STRIDE = 380
 N_BEST = 180
 MAX_ANSWER_LENGTH = 2000
 model_gemini=Gemini(key_manager,MODEL_GEMINI)
+
 def predict(contexts, question):
-    answer_final = []
+    lst_Answer_Final = []  # Danh sách chứa các câu trả lời
+    txt_Answer_Final = ""  # Chuỗi nối các câu trả lời
+    print("\n\nKết quả của lst_Answer_Final:\n\n")
+    
     for context in contexts:
         inputs = tokenizer(
             question,
@@ -31,11 +38,14 @@ def predict(contexts, question):
             padding="max_length",
             return_tensors="pt"
         )
+
         with torch.no_grad():
             outputs = model(**{k: v for k, v in inputs.items() if k in ['input_ids', 'attention_mask']})
+        
         start_logits = outputs.start_logits.squeeze().cpu().numpy()
         end_logits = outputs.end_logits.squeeze().cpu().numpy()
         offsets = inputs["offset_mapping"][0].cpu().numpy()
+        
         answers = []
         start_indexes = np.argsort(start_logits)[-N_BEST:][::-1].tolist()
         end_indexes = np.argsort(end_logits)[-N_BEST:][::-1].tolist()
@@ -52,14 +62,24 @@ def predict(contexts, question):
                             "score": start_logits[start_index] + end_logits[end_index],
                         }
                         answers.append(answer)
+        
         if answers:
             answers.sort(key=lambda x: x["score"], reverse=True)
             best_answer = answers[0]['text']
-            if best_answer not in answer_final:
-                answer_final.append(best_answer)
-                print(best_answer)
+            
+            if best_answer not in lst_Answer_Final:
+                lst_Answer_Final.append(best_answer)
+                print(best_answer,"\n")
         else: 
             return "Không có câu trả lời"
-        result_final=model_gemini.generate_response(question,answer_final)
-    return result_final 
+        
+    # Tạo chuỗi txt_Answer_Final bằng cách nối các câu trả lời trong lst_Answer_Final
+    txt_Answer_Final = "\n----------------------------------------------------------------\n".join(lst_Answer_Final)
+    print("\n\nKết quả của txt_Answer_Final:\n\n",txt_Answer_Final)
+        
+    return lst_Answer_Final, txt_Answer_Final
 
+def results_Gemini(question, lst_Answer_Final):
+    # Gọi model Gemini để tạo phản hồi cuối cùng
+    result_final = model_gemini.generate_response(question, lst_Answer_Final)
+    return result_final
