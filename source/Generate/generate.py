@@ -6,8 +6,8 @@ from source.Gemini.gemini import Gemini
 from dotenv import load_dotenv
 import os 
 load_dotenv()
-MODEL_EXTRACT=os.getenv("MODEL_EXTRACT")
-TOKENIZER=os.getenv("TOKENIZER")
+MODEL_EXTRACT=os.getenv("GENERATE_MODEL_EXTRACT")
+TOKENIZER=os.getenv("GENERATE_MODEL_TOKENIZER")
 APIS_GEMINI_LIST = os.getenv('APIS_GEMINI_LIST').split(',')
 key_manager = APIKeyManager(APIS_GEMINI_LIST)
 MODEL_GEMINI = os.getenv("MODEL_GEMIMI")

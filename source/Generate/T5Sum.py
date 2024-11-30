@@ -1,11 +1,16 @@
 import re
+import os
 
+from dotenv import load_dotenv
 from transformers import T5ForConditionalGeneration, AutoTokenizer, pipeline
+
+T5SUM_MODEL_TOKENIZER = os.getenv('T5SUM_MODEL_TOKENIZER')
+T5SUM_MODEL_GENERATE = os.getenv('T5SUM_MODEL_GENERATE')
 
 def summarize_text(text, max_chunk_length=512, stride=256, max_summary_length=1024, num_beams=5, repetition_penalty=2.0):
     # Load model và tokenizer
-    tokenizer = AutoTokenizer.from_pretrained('VietAI/vit5-base', trust_remote_code=True)
-    model = T5ForConditionalGeneration.from_pretrained("hghaan/t5_summary")
+    tokenizer = AutoTokenizer.from_pretrained(T5SUM_MODEL_TOKENIZER, trust_remote_code=True)
+    model = T5ForConditionalGeneration.from_pretrained(T5SUM_MODEL_GENERATE)
     
     tokenizer.padding_side = 'right'
     tokenizer.pad_token = tokenizer.eos_token  

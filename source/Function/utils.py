@@ -1,3 +1,23 @@
+import re
+
+def extract_keywords(text):
+    text = re.sub(r'[^\w\s/-]', '', text)  
+    words = text.split()                  
+    unique_words = list(dict.fromkeys(words))  
+    return unique_words
+
+def process_keywords(keywords):
+    result = []
+    roman_numeral_pattern = re.compile(r"^(?=[MDCLXVI])M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$")
+    
+    for word in keywords:
+        if roman_numeral_pattern.match(word) or any(c in word for c in "/-"):
+            result.append(word)
+        else:
+            result.append(word.lower())  # Chuyển các từ còn lại thành chữ thường
+    
+    return result
+
 def find_relevant_contexts(contexts, answers):
     lst_Relevant_Documents = []
 

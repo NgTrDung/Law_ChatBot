@@ -1,5 +1,5 @@
 import os
-import re
+import utils as u
 
 from source.Gemini.gemini import Gemini
 from source.Gemini.apikeys_gemini import APIKeyManager
@@ -17,14 +17,14 @@ EXIST_AMK_COLLECTION_NAME = os.getenv("EXIST_AMK_COLLECTION_NAME")
 APIS_GEMINI_LIST = os.getenv('APIS_GEMINI_LIST').split(',')
 MODEL_GEMINI = os.getenv("MODEL_GEMIMI")
 MODEL_RERANK=os.getenv("MODEL_RERANK")
+MODEL_EMBEDDING = os.getenv("MODEL_EMBEDDING")
 
 key_manager = APIKeyManager(APIS_GEMINI_LIST)
 
-EMBEDDINGS_MODEL_bkai = "bkai-foundation-models/vietnamese-bi-encoder"
 model_kwargs = {"device": "cpu"}
 encode_kwargs = {"normalize_embeddings": True}
 embeddings_bkai = HuggingFaceBgeEmbeddings(
-    model_name=EMBEDDINGS_MODEL_bkai,
+    model_name=MODEL_EMBEDDING,
     model_kwargs=model_kwargs,
     encode_kwargs=encode_kwargs
 )
@@ -64,24 +64,6 @@ metadata_Fields_To_Filter = [
     "metadata.combine_Article_Content_Keywords"
 ]
 
-def extract_keywords(text):
-    text = re.sub(r'[^\w\s/-]', '', text)  
-    words = text.split()                  
-    unique_words = list(dict.fromkeys(words))  
-    return unique_words
-
-def process_keywords(keywords):
-    result = []
-    roman_numeral_pattern = re.compile(r"^(?=[MDCLXVI])M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$")
-    
-    for word in keywords:
-        if roman_numeral_pattern.match(word) or any(c in word for c in "/-"):
-            result.append(word)
-        else:
-            result.append(word.lower())  # Chuyển các từ còn lại thành chữ thường
-    
-    return result
-
 def create_should_filter(user_keywords, metadata_fields = metadata_Fields_To_Filter):
     should_conditions = []
     
@@ -97,7 +79,7 @@ def create_should_filter(user_keywords, metadata_fields = metadata_Fields_To_Fil
     )
 
 def search_Article_Section_Documents(user_query, metadata_fields = metadata_Fields_To_Filter, top_k = 5):
-    user_keywords = process_keywords(extract_keywords(user_query))
+    user_keywords = u.process_keywords(u.extract_keywords(user_query))
     filter_conditions = create_should_filter(user_keywords, metadata_fields)
     
     search_results = exist_ASMK_Collection.similarity_search_with_score(
