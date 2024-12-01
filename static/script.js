@@ -5,7 +5,7 @@ function toggleSidebar() {
     const $toggleButton = $('.toggle-button');
     const $header = $('.header');
 
-    if ($sidebar.width() === 250) {
+    if ($sidebar.width() === 300) {
         // Thu nhỏ sidebar
         $sidebar.css('width', '0');
         $sidebarContent.hide();
@@ -15,7 +15,7 @@ function toggleSidebar() {
         $header.append($toggleButton);
     } else {
         // Phóng to sidebar
-        $sidebar.css('width', '250px');
+        $sidebar.css('width', '300px');
         $sidebarContent.show();
         $toggleButton.attr('title', 'Close sidebar');
 
