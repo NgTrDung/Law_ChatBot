@@ -70,8 +70,8 @@ def delete_session(session_id):
 def index():
     return render_template('index.html')
 
-@app.route('/chatbot', methods=['POST'])
-def chatbot():
+@app.route('/chatbot-with-T5Sum', methods=['POST'])
+def chatbot_with_T5Sum():
     user_input = request.json['query']
 
     article_Document_Results, lst_Article_Quote = search_Article(user_input)
@@ -81,6 +81,20 @@ def chatbot():
 
     return jsonify({
         'answer': txt_Sum_T5,
+        'lst_Relevant_Documents': lst_Relevant_Documents
+    })
+
+@app.route('/chatbot-with-gemini', methods=['POST'])
+def chatbot_with_gemini():
+    user_input = request.json['query']  # Lấy query từ người dùng
+
+    article_Document_Results, lst_Article_Quote = search_Article(user_input)
+    lst_Answer_Predict, txt_Answer_Predict = predict(article_Document_Results, user_input)
+    answer_Gemini = results_Gemini(user_input, lst_Answer_Predict)
+    lst_Relevant_Documents = find_relevant_contexts(lst_Article_Quote, lst_Answer_Predict)
+
+    return jsonify({
+        'answer': answer_Gemini,
         'lst_Relevant_Documents': lst_Relevant_Documents
     })
 

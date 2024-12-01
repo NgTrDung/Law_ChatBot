@@ -54,6 +54,19 @@ $('#user-query').on('keydown', function(event) {
     }
 });
 
+// Hàm lấy URL dựa trên mô hình hiện tại
+function getModelUrl() {
+    const currentModel = $(".model-name").text().trim();
+
+    if (currentModel === 'T5 Summary') {
+        return 'http://127.0.0.1:5000/chatbot-with-T5Sum';
+    } else if (currentModel === 'Gemini') {
+        return 'http://127.0.0.1:5000/chatbot-with-gemini';
+    } else {
+        return 'http://127.0.0.1:5000/chatbot-with-T5Sum'; // Mặc định
+    }
+}
+
 // Hàm gửi tin nhắn từ user
 function sendMessage() {
     const query = $userInput.val().trim();
@@ -94,8 +107,11 @@ function sendMessage() {
     $chatOutput.append($typingIndicator);
     $chatOutput.scrollTop($chatOutput.prop('scrollHeight'));
 
+    // Lấy URL của mô hình hiện tại
+    const url_Model = getModelUrl();
+
     $.ajax({
-        url: 'http://127.0.0.1:5000/chatbot',
+        url: url_Model,
         type: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({ query: query }),
@@ -330,13 +346,35 @@ function loadChatSessions() {
 
 // Logic event khi load lại web thì sẽ load danh sách các phiên chat cũ
 $(document).ready(function() {
-    loadChatSessions(); // Tải danh sách các phiên chat
+    // Tải danh sách các phiên chat
+    loadChatSessions();
+
+    // Đảm bảo rằng phần tử model-name luôn hiển thị "T5 Summary" khi trang được tải
+    $(".model-name").text("T5Sum");
+
+    // Gắn sự kiện click vào phần tử #change-model
+    $("#change-model").on("click", function() {
+        toggleModel();  // Gọi hàm toggleModel khi click
+    });
 
     const $inputArea = $('#user-query');  // Sử dụng id 'user-query' thay vì class 'input-area'
     // Vô hiệu hóa input và thay đổi placeholder
     $inputArea.prop('disabled', true);  // Vô hiệu hóa input
-    $inputArea.attr('placeholder', 'Click "New Chat" to start new Session');  // Thay đổi placeholder
+    $inputArea.attr('placeholder', 'Click "Đoạn Chat Mới" to start new Session');  // Thay đổi placeholder
 });
+
+// Hàm thay đổi mô hình và cập nhật href
+function toggleModel() {
+    const currentModel = $(".model-name").text().trim();
+
+    if (currentModel === 'T5Sum') {
+        $(".model-name").text('Gemini');
+        $(".model-name").addClass("gemini-model");
+    } else {
+        $(".model-name").text('T5Sum');
+        $(".model-name").removeClass("gemini-model");
+    }
+}
 
 // Hàm cập nhật trạng thái của nút Clear Chat
 function updateClearChatButtonState() {
