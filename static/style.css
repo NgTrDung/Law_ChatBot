@@ -15,7 +15,7 @@ body {
 
 .sidebar {
     background-color: #F9F9F9; /* Nền trắng cho thanh #171717 */
-    width: 250px; /* Thay đổi kích thước thanh sidebar */
+    width: 300px; /* Thay đổi kích thước thanh sidebar */
     transition: width 0.3s;
     position: relative;
     box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1); /* Thêm bóng đổ cho sidebar */
@@ -369,3 +369,12 @@ button:disabled {
     font-weight: bold; /* In đậm */
 }
 
+.model-name {
+    font-weight: bold; /* In đậm */
+    color: #1e90ff; /* Màu xanh biển */
+}
+
+/* Khi mô hình là Gemini */
+.model-name.gemini-model {
+    color: #28a745; /* Màu xanh lá cây */
+}
