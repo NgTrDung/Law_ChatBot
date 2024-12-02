@@ -6,7 +6,7 @@ class DBConnection:
 
     def Get_DB_Connection(self):
         conn = pyodbc.connect(
-            'DRIVER={SQL Server};' ## ODBC Driver 17 for SQL Server
+            'DRIVER={ODBC Driver 17 for SQL Server};' ## ODBC Driver 17 for SQL Server
             f'SERVER={self.server_name};'
             'DATABASE=Law_ChatBot_DB;'
             'Trusted_Connection=yes;'

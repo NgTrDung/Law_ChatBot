@@ -6,7 +6,7 @@ from source.Generate.generate import predict, results_Gemini
 from source.Function.search_Qdrant import  search_Article
 from source.Function.utils import find_relevant_contexts
 from source.Database.db_connection import DBConnection
-from source.Generate.T5Sum import summarize_text
+from source.Generate.T5Sum import predict_summary
 
 load_dotenv()
 
@@ -76,7 +76,7 @@ def chatbot_with_T5Sum():
 
     article_Document_Results, lst_Article_Quote = search_Article(user_input)
     lst_Answer_Predict, txt_Answer_Predict = predict(article_Document_Results, user_input)
-    txt_Sum_T5 = summarize_text(txt_Answer_Predict)
+    txt_Sum_T5 = predict_summary(txt_Answer_Predict)
     lst_Relevant_Documents = find_relevant_contexts(lst_Article_Quote, lst_Answer_Predict)
 
     return jsonify({
@@ -89,7 +89,7 @@ def chatbot_with_gemini():
     user_input = request.json['query']  # Lấy query từ người dùng
 
     article_Document_Results, lst_Article_Quote = search_Article(user_input)
-    lst_Answer_Predict, txt_Answer_Predict = predict(article_Document_Results, user_input)
+    lst_Answer_Predict, _ = predict(article_Document_Results, user_input)
     answer_Gemini = results_Gemini(user_input, lst_Answer_Predict)
     lst_Relevant_Documents = find_relevant_contexts(lst_Article_Quote, lst_Answer_Predict)
 

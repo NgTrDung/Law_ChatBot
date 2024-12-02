@@ -13,34 +13,45 @@ class Gemini():
         prompt = ChatPromptTemplate.from_messages(
             [
                 ("system", 
-                "Bạn là một trợ lý chuyên gia về pháp luật Việt Nam. Nhiệm vụ của bạn là tạo ra năm câu truy vấn tìm kiếm liên quan đến một câu hỏi pháp lý gốc. "
-                "Các câu truy vấn này cần phải có cấu trúc khác nhau, nhưng vẫn giữ nguyên nội dung và ý nghĩa của câu hỏi pháp lý ban đầu. "
-                "Mỗi câu truy vấn có thể thay đổi cách diễn đạt hoặc sắp xếp từ ngữ, nhưng mục tiêu là tạo ra các câu hỏi rõ ràng và dễ hiểu cho người tìm kiếm thông tin pháp lý. "
-                "Ví dụ: "
-                "- 'Điều kiện để thành lập doanh nghiệp tại Việt Nam là gì?' có thể đổi thành 'Thành lập doanh nghiệp tại Việt Nam cần những điều kiện gì?'"
-                "- 'Quyền lợi của người lao động khi tham gia bảo hiểm xã hội là gì?' có thể đổi thành 'Bảo hiểm xã hội mang lại quyền lợi gì cho người lao động?'"
-                "- 'Các bước thủ tục ly hôn theo quy định của pháp luật Việt Nam như thế nào?' có thể đổi thành 'Thủ tục ly hôn theo pháp luật Việt Nam bao gồm những bước nào?'"
-                "- 'Tôi có thể khởi kiện vì bị xâm phạm quyền lợi như thế nào?' có thể đổi thành 'Cách khởi kiện khi quyền lợi bị xâm phạm là gì?'"
-                "- 'Quyền lợi của người lao động khi bị sa thải theo quy định của pháp luật là gì?' có thể đổi thành 'Khi bị sa thải, người lao động có quyền lợi gì theo pháp luật Việt Nam?'"
+                """
+                   Bạn là một trợ lý AI chuyên gia về pháp luật Việt Nam, chuyên phân tích ngữ nghĩa và tối ưu hóa truy vấn tìm kiếm. 
+                   Nhiệm vụ:
+                    - Tạo 5 câu truy vấn tìm kiếm khác nhau dựa trên truy vấn gốc, giữ nguyên ý chính nhưng thay đổi cách diễn đạt.
+                    - Tăng tính bao quát và chi tiết bằng cách sử dụng từ khóa liên quan và cụm từ pháp lý thông dụng.
+                    - Tối ưu hóa phù hợp với tìm kiếm trên vector database.
+                """),
+                ("human", f"""
+                Từ câu truy vấn gốc '"{original_query}"', hãy làm 3 yêu cầu bên dưới:
+                ***Yêu cầu 1 Cách tạo sinh :***
+                -Tạo sinh câu hỏi bằng cách đọc kĩ hiểu câu hỏi sau đó phân loại truy vấn theo hai nhóm để biết cách tạo sinh các câu hỏi cho phù:
+                    1. Người dùng không biết luật (tìm kiếm thông tin cơ bản).
+                    2. Người dùng biết luật (tìm kiếm thông tin chi tiết, cụ thể với điều luật hoặc tài liệu pháp lý)
+                Ví dụ cho người dùng không biết luật thì sẽ đổi thành:
+                1."- 'Điều kiện để thành lập doanh nghiệp tại Việt Nam là gì?' có thể đổi thành 'Thành lập doanh nghiệp tại Việt Nam cần những điều kiện gì?'"
+                2."- 'Quyền lợi của người lao động khi tham gia bảo hiểm xã hội là gì?' có thể đổi thành 'Bảo hiểm xã hội mang lại quyền lợi gì cho người lao động?'"
+                3."- 'Các bước thủ tục ly hôn theo quy định của pháp luật Việt Nam như thế nào?' có thể đổi thành 'Thủ tục ly hôn theo pháp luật Việt Nam bao gồm những bước nào?'"
+                4.- 'Tôi có thể khởi kiện vì bị xâm phạm quyền lợi như thế nào?' có thể đổi thành 'Cách khởi kiện khi quyền lợi bị xâm phạm là gì?'"
+                5."- 'Quyền lợi của người lao động khi bị sa thải theo quy định của pháp luật là gì?' có thể đổi thành 'Khi bị sa thải, người lao động có quyền lợi gì theo pháp luật Việt Nam?'"
+
+                Ví dụ cho người dùng biết luật thì sẽ đổi thành:
+                -Khi người dùng biết luật
+                "- 'Điều 12 của Luật Doanh nghiệp số 68/2014/QH13 quy định như thế nào về việc thành lập doanh nghiệp?'" " có thể đổi thành 'Luật Doanh nghiệp 68/2014/QH13 quy định về điều kiện thành lập doanh nghiệp tại Điều 12 như thế nào?'"
+                "- 'Theo Luật Lao động số 45/2019/QH14, quyền lợi của người lao động khi tham gia bảo hiểm xã hội được quy định tại Chương III?'" " có thể đổi thành 'Quyền lợi của người lao động khi tham gia bảo hiểm xã hội theo Luật Lao động số 45/2019/QH14 được quy định ở đâu?'"
+                "- 'Công ty tôi có thể tham gia vào hợp đồng lao động theo Điều 16 của Bộ luật Lao động 2012 không?'" " có thể đổi thành 'Bộ luật Lao động 2012 có quy định gì về hợp đồng lao động tại Điều 16 không?'"
+                "- 'Thủ tục ly hôn theo pháp luật Việt Nam được quy định tại Điều 51 của Luật Hôn nhân và Gia đình 2014 như thế nào?'"" có thể đổi thành 'Luật Hôn nhân và Gia đình 2014 quy định thủ tục ly hôn ở Điều 51 ra sao?'"
+                "- 'Điều 10 của Luật Đầu tư 2020 quy định về đầu tư vào ngành nghề nào tại Việt Nam?'" " có thể đổi thành 'Luật Đầu tư 2020 quy định ngành nghề nào được ưu tiên đầu tư tại Điều 10?'
                 
-                "- 'Điều 12 của Luật Doanh nghiệp số 68/2014/QH13 quy định như thế nào về việc thành lập doanh nghiệp?'"
-                " có thể đổi thành 'Luật Doanh nghiệp 68/2014/QH13 quy định về điều kiện thành lập doanh nghiệp tại Điều 12 như thế nào?'"
+                ***Yêu cầu 2:Cấu trúc***:
+                - Các câu truy vấn không được lặp lại ý hoàn toàn.
+                - Phải giữ cấu trúc rõ ràng, từ ngữ dễ hiểu, và có tính ứng dụng thực tiễn cao.
+                - Dùng ngữ cảnh cụ thể hơn hoặc từ khóa liên quan nếu phù hợp.
                 
-                "- 'Theo Luật Lao động số 45/2019/QH14, quyền lợi của người lao động khi tham gia bảo hiểm xã hội được quy định tại Chương III?'"
-                " có thể đổi thành 'Quyền lợi của người lao động khi tham gia bảo hiểm xã hội theo Luật Lao động số 45/2019/QH14 được quy định ở đâu?'"
-                
-                "- 'Công ty tôi có thể tham gia vào hợp đồng lao động theo Điều 16 của Bộ luật Lao động 2012 không?'"
-                " có thể đổi thành 'Bộ luật Lao động 2012 có quy định gì về hợp đồng lao động tại Điều 16 không?'"
-                
-                "- 'Thủ tục ly hôn theo pháp luật Việt Nam được quy định tại Điều 51 của Luật Hôn nhân và Gia đình 2014 như thế nào?'"
-                " có thể đổi thành 'Luật Hôn nhân và Gia đình 2014 quy định thủ tục ly hôn ở Điều 51 ra sao?'"
-                
-                "- 'Điều 10 của Luật Đầu tư 2020 quy định về đầu tư vào ngành nghề nào tại Việt Nam?'"
-                " có thể đổi thành 'Luật Đầu tư 2020 quy định ngành nghề nào được ưu tiên đầu tư tại Điều 10?'"
-                ),
-                ("human", f"Vui lòng tạo ra năm câu truy vấn tìm kiếm liên quan nhất đến: {original_query}. Chỉ trả về năm câu truy vấn, không giải thích gì thêm.")
+                *** Yêu cầu 3:Số lượng *** 
+                - Tạo chính xác 5 câu truy vấn tối ưu hóa nhất cho truy vấn gốc.
+                - Chỉ trả về 5 câu truy vấn, không giải thích thêm.""")
             ]
         )
+
 
         model = ChatGoogleGenerativeAI(
             google_api_key=self.key_manager.get_next_key(),
@@ -58,7 +69,6 @@ class Gemini():
         if len(generated_queries) > 5:
             generated_queries = generated_queries[:5]
 
-        # Thêm câu gốc vào đầu danh sách kết quả
         queries = [query] + generated_queries
 
         return queries

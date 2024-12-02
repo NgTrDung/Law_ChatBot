@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 import os 
-
+import cohere
 from transformers import AutoTokenizer, AutoModelForQuestionAnswering
 from source.Gemini.apikeys_gemini import APIKeyManager
 from source.Gemini.gemini import Gemini
@@ -13,7 +13,9 @@ TOKENIZER=os.getenv("GENERATE_MODEL_TOKENIZER")
 MODEL_GEMINI = os.getenv("MODEL_GEMIMI")
 APIS_GEMINI_LIST = os.getenv('APIS_GEMINI_LIST').split(',')
 key_manager = APIKeyManager(APIS_GEMINI_LIST)
-
+API_RERANKER=os.getenv('API_RERANKER').split(',')
+key_manager_cohere=APIKeyManager(API_RERANKER)
+MODEL_RERANK=os.getenv("MODEL_RERANKER")
 model =AutoModelForQuestionAnswering.from_pretrained(MODEL_EXTRACT, token='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')
 tokenizer = AutoTokenizer.from_pretrained(TOKENIZER)
 MAX_LENGTH = 512
@@ -25,7 +27,6 @@ model_gemini=Gemini(key_manager,MODEL_GEMINI)
 def predict(contexts, question):
     lst_Answer_Final = []  
     txt_Answer_Final = ""  
-    print("\n\nKết quả của lst_Answer_Final:\n\n")
     for context in contexts:
         inputs = tokenizer(
             question,
@@ -70,11 +71,21 @@ def predict(contexts, question):
                 lst_Answer_Final.append(best_answer)
         else: 
             return "Không có câu trả lời"
-    txt_Answer_Final = "\n----------------------------------------------------------------\n".join(lst_Answer_Final)
-    print("\n\nKết quả của txt_Answer_Final:\n\n",txt_Answer_Final)
-        
-    return lst_Answer_Final, txt_Answer_Final
-
+    ranked_documents = []
+    try:
+        co = cohere.ClientV2(key_manager_cohere.get_next_key())
+        response = co.rerank(
+            model=MODEL_RERANK,
+            query= question,
+            documents=lst_Answer_Final,
+            top_n=3,
+        )
+        reranked_results = response.results
+        ranked_documents = [lst_Answer_Final[res.index] for res in reranked_results]
+    except Exception as e:
+        print(f"An error occurred: {e}")
+    txt_Answer_Final = "\n".join(ranked_documents)
+    return ranked_documents , txt_Answer_Final
 def results_Gemini(question, lst_Answer_Final):
     result_final = model_gemini.generate_response(question, lst_Answer_Final)
     return result_final

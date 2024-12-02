@@ -9,16 +9,17 @@ from langchain_community.embeddings import HuggingFaceBgeEmbeddings
 from qdrant_client.models import Filter, FieldCondition, MatchValue
 from typing import List, Tuple
 from langchain_qdrant import Qdrant
-
+import cohere
 load_dotenv()
 URL_QDRANT_LOCAL = os.getenv("URL_QDRANT_LOCAL")
 EXIST_ASMK_COLLECTION_NAME = os.getenv("EXIST_ASMK_COLLECTION_NAME")
 EXIST_AMK_COLLECTION_NAME = os.getenv("EXIST_AMK_COLLECTION_NAME")
 APIS_GEMINI_LIST = os.getenv('APIS_GEMINI_LIST').split(',')
 MODEL_GEMINI = os.getenv("MODEL_GEMIMI")
-MODEL_RERANK=os.getenv("MODEL_RERANK")
+MODEL_RERANK=os.getenv("MODEL_RERANKER")
+API_RERANKER=os.getenv('API_RERANKER').split(',')
 MODEL_EMBEDDING = os.getenv("MODEL_EMBEDDING")
-
+key_manager_cohere=APIKeyManager(API_RERANKER)
 key_manager = APIKeyManager(APIS_GEMINI_LIST)
 
 model_kwargs = {"device": "cpu"}
@@ -29,8 +30,7 @@ embeddings_bkai = HuggingFaceBgeEmbeddings(
     encode_kwargs=encode_kwargs
 )
 
-model_rerank=CrossEncoder(MODEL_RERANK)
-
+key_manager = APIKeyManager(APIS_GEMINI_LIST)
 gemini_model=Gemini(key_manager,MODEL_GEMINI)
 
 exist_ASMK_Collection = Qdrant.from_existing_collection(
@@ -93,11 +93,6 @@ def search_Article_Section_Documents(user_query, metadata_fields = metadata_Fiel
 
 def search_With_Similarity_Queries(user_query: str):
     queries = gemini_model.query_generator(user_query)
-
-    print("\nCác kết quả Queries_Similarity trả về:\n")
-    for query in queries:
-        print(query,"\n")
-
     query_results = []
     for query in queries:
         search_results = search_Article_Section_Documents(query)
@@ -113,28 +108,26 @@ def search_With_Similarity_Queries(user_query: str):
     
     return list(unique_results.values())
 
-def rerank_documents(top_documents: List[Tuple], query_text) -> List[Tuple]:
-    query_passage_pairs = [
-        (query_text, doc.page_content) 
-        for doc, _ in top_documents 
-        if hasattr(doc, "page_content") and doc.page_content.strip()
-    ]
-
-    if not query_passage_pairs:
-        return []
-    
-    scores = model_rerank.predict(query_passage_pairs)
-
-    ranked_documents = [
-        (doc, score) for (doc, _), score in zip(top_documents, scores)
-    ]
-    reranked_results = sorted(ranked_documents, key=lambda x: x[1], reverse=True)
-
-    return reranked_results[:5]
+def rerank_documents(query: str, documents: List[Tuple]) -> List[Tuple[str, float]]:
+    ranked_documents = []
+    doc_contents = [doc.page_content for doc, _ in documents]
+    try:
+        co = cohere.ClientV2(key_manager_cohere.get_next_key())
+        response = co.rerank(
+            model=MODEL_RERANK,
+            query=query,
+            documents=doc_contents,
+            top_n=5,
+        )
+        reranked_results = response.results
+        ranked_documents = [documents[res.index] for res in reranked_results]
+    except Exception as e:
+        print(f"An error occurred: {e}")
+    return ranked_documents  
 
 def get_Article_Section_Content_Result(user_Query):
     article_Section_Documents = search_With_Similarity_Queries(user_Query)
-    rerank_Article_Section_Documents = rerank_documents(article_Section_Documents,user_Query)
+    rerank_Article_Section_Documents = rerank_documents(user_Query,article_Section_Documents)
     
     article_Section_Content_Results = [
         result[0].metadata["combine_Article_Content"] for result in rerank_Article_Section_Documents
@@ -188,7 +181,7 @@ def search_Article_Documents(list_Metadata, top_k = 1):
 
 def get_Article_Content_Results(user_Query):
     article_Section_Documents = search_With_Similarity_Queries(user_Query)
-    rerank_Article_Section_Documents = rerank_documents(article_Section_Documents,user_Query)
+    rerank_Article_Section_Documents = rerank_documents(user_Query,article_Section_Documents)
     list_Metadata = extract_Unique_Metadata(rerank_Article_Section_Documents)
     article_Documents = search_Article_Documents(list_Metadata)
 
