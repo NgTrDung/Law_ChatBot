@@ -1,4 +1,5 @@
 import os
+import cohere
 
 from source.Function import utils as u
 from source.Gemini.gemini import Gemini
@@ -9,7 +10,7 @@ from langchain_community.embeddings import HuggingFaceBgeEmbeddings
 from qdrant_client.models import Filter, FieldCondition, MatchValue
 from typing import List, Tuple
 from langchain_qdrant import Qdrant
-import cohere
+
 load_dotenv()
 URL_QDRANT_LOCAL = os.getenv("URL_QDRANT_LOCAL")
 EXIST_ASMK_COLLECTION_NAME = os.getenv("EXIST_ASMK_COLLECTION_NAME")
