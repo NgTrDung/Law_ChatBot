@@ -73,48 +73,60 @@ class Gemini():
 
         return queries
 
-    
-    def prompt_template(self,docs: List[Tuple], original_query: str) -> str:
+    def prompt_template(self, docs: List[Tuple], original_query: str) -> str:
+        # Kết hợp các tài liệu thành một chuỗi văn bản có cấu trúc
         context = "\n".join([doc for doc in docs])
 
-        response_prompt = ChatPromptTemplate.from_messages(
-        [ ("system", "Bạn là một trợ lý chuyên gia về Pháp Luật Việt Nam. Nhiệm vụ của bạn là trả lời các câu hỏi liên quan đến Pháp Luật Việt Nam dựa trên thông tin đã được cung cấp."
-            "Câu trả lời phải dựa trên thông tin được cung cấp và tuân thủ các yêu cầu trả lời sau."),
-
+        response_prompt = ChatPromptTemplate.from_messages([
+            ("system", 
+            "Bạn là một chuyên gia tư vấn pháp luật với hơn 30 năm kinh nghiệm trong nghề. "
+            "Nhiệm vụ của bạn là trả lời các câu hỏi về Pháp Luật Việt Nam dựa trên thông tin được cung cấp. "
+            "Bạn phải đảm bảo rằng câu trả lời chính xác, dễ hiểu, và phù hợp với các quy định pháp luật hiện hành."),
+            
             ("human", f"""
-                Dưới đây là câu hỏi cần bạn trả lời:
-                '{original_query}'
-
-                Bạn hãy trả lời câu hỏi này dựa trên nội dung sau:
-                {context}
-
-            Yêu cầu trả lời:
-                1. Phân tích kỹ câu hỏi:
-                - Hiểu đầy đủ ý nghĩa của câu hỏi, bao gồm cả các từ đồng nghĩa, cách diễn đạt tương tự hoặc biến thể ngữ nghĩa.
-                - Bắt đầu câu trả lời bằng một câu mở đầu rõ ràng, liên quan trực tiếp đến ý chính trong câu hỏi. Ví dụ: Nếu câu hỏi là "Luật lao động là gì?" thì câu trả lời nên bắt đầu bằng: "Luật lao động là…".
-                - Xác định các khía cạnh chính cần trả lời để tránh bỏ sót ý quan trọng.
-                2. Trả lời câu hỏi:
-                - Trình bày dưới dạng các đoạn văn logic, mỗi đoạn giải thích một khía cạnh hoặc ý chính của câu hỏi.
-                - Chia câu trả lời thành các mục rõ ràng (ví dụ: 1, 2, 3), với mỗi mục phải liên quan trực tiếp đến tiêu đề hoặc ý chính được đề cập.
-                3. Sử dụng thông tin cung cấp:
-                - Trả lời dựa trên toàn bộ thông tin từ nội dung cung cấp. Không thêm thông tin ngoài nguồn cung cấp.
-                4. Trường hợp không đủ dữ liệu:
-                - Nếu không có thông tin liên quan, phản hồi: "Trong bộ dữ liệu không có thông tin."
-                5. Đảm bảo chất lượng câu trả lời:
-                - Câu trả lời cần đầy đủ, rõ ràng, dễ hiểu và có cấu trúc chặt chẽ.
-                - Đảm bảo không để sót bất kỳ phần quan trọng nào, đồng thời tránh các thông tin dư thừa hoặc không liên quan.
-                6. Phong cách trình bày:
-                - Chuyên nghiệp, chính xác và phù hợp với ngữ cảnh Pháp Luật Việt Nam.
+            Dưới đây là câu hỏi bạn cần trả lời:
+            '{original_query}'
+            
+            **Thông tin tham khảo để trả lời**:
+            {context}
+            
+            **Yêu cầu trả lời**:
+            
+            ### 1. Phân tích câu hỏi:
+            - Hiểu ý nghĩa toàn diện của câu hỏi, bao gồm các cách diễn đạt tương tự, từ đồng nghĩa và biến thể ngữ nghĩa.
+            - Xác định rõ các khía cạnh chính hoặc các điểm cần làm rõ từ câu hỏi.
+            
+            ### 2. Cấu trúc câu trả lời:
+            - Mở đầu câu trả lời ngắn gọn, đi thẳng vào ý chính.
+            Ví dụ: Với câu hỏi *'Người từ bao nhiêu tuổi phải đăng ký căn cước công dân?'*, câu trả lời sẽ bắt đầu bằng câu đầu tiên là: *'Theo quy định, người từ đủ 14 tuổi phải đăng ký căn cước công dân.'*
+            - Trả lời theo từng ý rõ ràng, mỗi ý tương ứng với một điểm hoặc khía cạnh cụ thể.
+            - Sử dụng các số thứ tự (1, 2, 3...) hoặc dấu đầu dòng để trình bày nội dung một cách logic.
+            
+            ### 3. Tuân thủ nội dung:
+            - Chỉ sử dụng thông tin từ nội dung được cung cấp, có thể suy diễn và suy luận.Nhưng không thêm thông tin từ bên ngoài.
+                
+            ### 4. Xử lý trường hợp không có thông tin:
+            - Nếu không có thông tin phù hợp trong dữ liệu cung cấp, trả lời như sau: *'Xin lỗi Bạn câu hỏi này không nằm trong phần kiến thức của Tôi.'*
+            
+            ### 5. Phong cách trình bày:
+            - Ngắn gọn, rõ ràng, súc tích nhưng vẫn đảm bảo đủ ý.
+            - Chuyên nghiệp và chính xác theo ngôn ngữ pháp luật Việt Nam.
+            - Tránh sử dụng ngôn ngữ không trang trọng hoặc diễn đạt quá phức tạp.
+            
+            ### 6. Đảm bảo chất lượng:
+            - Mọi câu trả lời cần được kiểm tra tính chính xác và rõ ràng trước khi gửi đi.
+            - Kết thúc câu trả lời bằng một tóm lược ngắn gọn nếu cần thiết.
+            *Lưu ý mấy yêu cầu này là dành cho bạn hiểu để khi trả lời bạn làm theo yêu cầu chứ không phải kêu bạn lúc trả lời tạo ra yêu cầu.Bắt buộc lúc trả lời là chỉ trả lời chứ không được tạo ra yêu cầu ### ở trên.*
             """)
         ])
-
         return response_prompt
+
     
     def generate_response(self,original_query: str, docs: List) -> str:
         response_model = ChatGoogleGenerativeAI(
             google_api_key=self.key_manager.get_next_key(),
             model=self.model_gemini,
-            temperature=0.1,
+            temperature=0.2,
             max_tokens=3000,
             top_p=0.6,
         )

@@ -208,12 +208,12 @@ button:disabled {
     50% { transform: translateY(-5px); } /* Hiệu ứng lên xuống 5px */
 }
 
-.typing-indicator {
+/* .typing-indicator {
     display: flex;
     align-items: center;
     font-size: 20px;
     color: black;
-}
+} */
 
 .typing-indicator span {
     animation: wave 1.9s ease-in-out infinite; /* Tổng thời gian chu kỳ là 1.9s, gồm 0.9s chuyển động và 1s nghỉ */
@@ -265,8 +265,7 @@ button:disabled {
 }
 
 .relevant-document {
-    width: 200px; /* Đặt chiều rộng cho các thẻ */
-    padding: 15px;
+    padding: 5px;
     background-color: #f9f9f9;
     border: 1px solid #ddd;
     border-radius: 8px;
@@ -284,6 +283,12 @@ button:disabled {
 
 .relevant-documents-container {
     margin-left: 70px;
+}
+
+/* Định nghĩa kiểu dáng cho thẻ <hr> */
+.custom-hr {
+    margin-top: 4px;
+    margin-bottom: 4px;
 }
 
 /* Định dạng overlay khi mở rộng tài liệu */

@@ -71,21 +71,8 @@ def predict(contexts, question):
                 lst_Answer_Final.append(best_answer)
         else: 
             return "Không có câu trả lời"
-    ranked_documents = []
-    try:
-        co = cohere.ClientV2(key_manager_cohere.get_next_key())
-        response = co.rerank(
-            model=MODEL_RERANK,
-            query= question,
-            documents=lst_Answer_Final,
-            top_n=3,
-        )
-        reranked_results = response.results
-        ranked_documents = [lst_Answer_Final[res.index] for res in reranked_results]
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    txt_Answer_Final = "\n".join(ranked_documents)
-    return ranked_documents , txt_Answer_Final
+        txt_Answer_Final="\n".join(lst_Answer_Final)
+    return lst_Answer_Final , txt_Answer_Final
 def results_Gemini(question, lst_Answer_Final):
     result_final = model_gemini.generate_response(question, lst_Answer_Final)
     return result_final

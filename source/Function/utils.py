@@ -24,6 +24,15 @@ def find_relevant_contexts(contexts, answers):
     for answer in answers:
         for context in contexts:
             if answer in context and context not in lst_Relevant_Documents:
-                lst_Relevant_Documents.append(context)
-                
+                # Tìm và thay thế {combine_Article_Content} bằng câu trả lời
+                parts = context.split('<=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=>')
+
+                if len(parts) > 1:
+                    metadata_part = parts[0].strip()  # Lấy phần metadata
+                    # Tạo một định dạng mới với {combine_Article_Content} được thay thế bằng answer
+                    new_context = f"{answer}\n\n<=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=>\n\n{metadata_part}"
+                    # Thêm ngữ cảnh đã thay đổi vào danh sách kết quả
+                    lst_Relevant_Documents.append(new_context)
+
     return lst_Relevant_Documents
+

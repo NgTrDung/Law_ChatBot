@@ -94,6 +94,7 @@ def search_Article_Section_Documents(user_query, metadata_fields = metadata_Fiel
 
 def search_With_Similarity_Queries(user_query: str):
     queries = gemini_model.query_generator(user_query)
+    
     query_results = []
     for query in queries:
         search_results = search_Article_Section_Documents(query)
@@ -201,6 +202,7 @@ def get_Article_Content_Results(user_Query):
         chapter = doc.metadata.get("Chapter", "N/A")
         section = doc.metadata.get("Section", "N/A")
         mini_section = doc.metadata.get("Mini-Section", "N/A")
+        article = doc.metadata.get("Article","N/A")
         combine_Article_Content = doc.metadata.get("combine_Article_Content", "N/A")
         formatted_quote = f"""\
                         Loại văn bản: {loai_van_ban}
@@ -213,6 +215,7 @@ def get_Article_Content_Results(user_Query):
                         Chương: {chapter}
                         Mục: {section}
                         Tiểu mục: {mini_section}
+                        Điều: {article}
                         <=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=>
                         {combine_Article_Content}
                         """

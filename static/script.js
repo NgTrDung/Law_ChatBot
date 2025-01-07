@@ -101,11 +101,35 @@ function sendMessage() {
     const $typingIndicator = $(`
         <div class="chat-message bot typing-indicator">
             <div class="avatar bot-avatar" style="background-image: url('https://png.pngtree.com/png-vector/20230225/ourmid/pngtree-smart-chatbot-cartoon-clipart-png-image_6620453.png');"></div>
-            <div class="message"><span>.</span><span>.</span><span>.</span></div>
+            <div class="message" style="font-size: 14px;
+                                color: rgba(0, 0, 0, 0.6); 
+                                display: flex;
+                                align-items: center;">
+                Đang suy nghĩ câu trả lời 
+                <div class="time-count" style="margin-left: 5px; margin-right: 5px;">
+                00:00</div>
+                <span>.</span><span>.</span><span>.</span>
+            </div>
         </div>
     `);
     $chatOutput.append($typingIndicator);
     $chatOutput.scrollTop($chatOutput.prop('scrollHeight'));
+
+    // Khởi tạo thời gian bắt đầu
+    const startTime = Date.now();
+
+    // Cập nhật số phút và giây trong "Đang suy nghĩ câu trả lời"
+    const updateTimeInterval = setInterval(() => {
+        const elapsedTime = Math.floor((Date.now() - startTime) / 1000); // Tính số giây đã trôi qua
+        const minutes = Math.floor(elapsedTime / 60); // Tính phút
+        const seconds = elapsedTime % 60; // Tính giây còn lại
+
+        // Đảm bảo rằng phút và giây đều có 2 chữ số
+        const formattedTime = `${minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+
+        // Cập nhật hiển thị thời gian
+        $typingIndicator.find('.time-count').text(formattedTime);
+    }, 1000); // Cập nhật mỗi giây
 
     // Lấy URL của mô hình hiện tại
     const url_Model = getModelUrl();
@@ -117,6 +141,7 @@ function sendMessage() {
         data: JSON.stringify({ query: query }),
         success: function(data) {
             setTimeout(() => {
+                clearInterval(updateTimeInterval); // Dừng cập nhật thời gian khi có phản hồi
                 $typingIndicator.remove();
                 processResponse(data); // Sử dụng processResponse để xử lý phản hồi
 
@@ -194,23 +219,52 @@ function displayRelevantDocuments(documents) {
     container.append(documentsWrapper);
 
     documents.forEach((doc, index) => {
-        // Giới hạn nội dung hiển thị (ví dụ: 100 ký tự đầu tiên)
-        const shortContent = doc.length > 100 ? doc.substring(0, 100) + '...' : doc;
+        // // Giới hạn nội dung hiển thị (ví dụ: 100 ký tự đầu tiên)
+        // const shortContent = doc.length > 100 ? doc.substring(0, 100) + '...' : doc;
 
-        // Tạo thẻ cho document
-        const docElement = $(`
-            <div class="relevant-document" data-full-content="${doc}">
-                ${shortContent}
-            </div>
-        `);
+        // // Tạo thẻ cho document
+        // const docElement = $(`
+        //     <div class="relevant-document" data-full-content="${doc}">
+        //         ${shortContent}
+        //     </div>
+        // `);
 
-        // Thêm sự kiện click để mở rộng nội dung đầy đủ
-        docElement.on('click', function() {
-            const fullContent = $(this).data('full-content');
-            openFullscreenDocument(fullContent);
-        });
+        // Lấy phần metadata từ chuỗi trích dẫn tài liệu
+        const parts = doc.split('<=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=>');
 
-        documentsWrapper.append(docElement);
+        // Kiểm tra nếu có ít nhất hai phần (metadata và nội dung)
+        if (parts.length > 1) {
+            const contentPart = parts[0].trim(); // Metadata phần đầu tiên
+            const metadataPart = parts[1].trim();  // Nội dung tài liệu phần thứ hai
+
+            // Trích xuất thông tin từ metadata, ví dụ: 'loai_van_ban' và 'so_hieu'
+            const loaiVanBanMatch = metadataPart.match(/Loại văn bản: (.*)/);
+            const soHieuMatch = metadataPart.match(/Số hiệu: (.*)/);
+
+            // Lấy thông tin từ các nhóm đã trích xuất
+            const loaiVanBan = loaiVanBanMatch ? loaiVanBanMatch[1] : "N/A";
+            const soHieu = soHieuMatch ? soHieuMatch[1] : "N/A";
+
+            // Giới hạn nội dung hiển thị (ví dụ: 20 ký tự đầu tiên)
+            const shortContent = contentPart.length > 20 ? contentPart.substring(0, 20) + '...' : contentPart;
+
+            // Tạo nội dung thẻ tài liệu mới
+            const docElement = $(`
+                <div class="relevant-document" data-full-content="${doc}">
+                    ${loaiVanBan} ${soHieu}
+                    <hr class="custom-hr">
+                    ${shortContent}
+                </div>
+            `);
+
+            // Thêm sự kiện click để mở rộng nội dung đầy đủ
+            docElement.on('click', function() {
+                const fullContent = $(this).data('full-content');
+                openFullscreenDocument(fullContent);
+            });
+
+            documentsWrapper.append(docElement);
+        }
     });
 }
 
@@ -258,7 +312,7 @@ function startNewSession() {
             const defaultMessage = `
                 <div class="chat-message bot">
                     <div class="avatar bot-avatar" style="background-image: url('https://png.pngtree.com/png-vector/20230225/ourmid/pngtree-smart-chatbot-cartoon-clipart-png-image_6620453.png');"></div>
-                    <div class="message">Hello! How can I help you today?</div>
+                    <div class="message">Xin chào Bạn, Tôi là một trợ lý chuyên hỗ trợ về pháp luật Việt Nam. Bạn có câu hỏi gì xin đừng ngần ngại hỏi Tôi nhé!</div>
                 </div>
             `;
             $('#chat-output').append(defaultMessage);
@@ -272,14 +326,14 @@ function startNewSession() {
 // Hàm xử lý khi user click New Chat
 $('#new-chat').on('click', function (event) {
     event.preventDefault();
-    if (confirm("Are you sure you want to start a new chat session?")) {
+    if (confirm("Bạn có chắc chắn muốn bắt đầu một phiên trò chuyện mới?")) {
         localStorage.removeItem('session_id'); // Xóa session ID cũ
         startNewSession(); // Tạo session mới
 
         const $inputArea = $('#user-query');  // Sử dụng id 'user-query' thay vì class 'input-area'
         // Vô hiệu hóa input và thay đổi placeholder
         $inputArea.prop('disabled', false);  // Vô hiệu hóa input
-        $inputArea.attr('placeholder', 'Type a message...');  // Thay đổi placeholder
+        $inputArea.attr('placeholder', 'Nhập tin nhắn ...');  // Thay đổi placeholder
 
         loadChatSessions(); // Cập nhật lại danh sách phiên chat
 
@@ -360,7 +414,7 @@ $(document).ready(function() {
     const $inputArea = $('#user-query');  // Sử dụng id 'user-query' thay vì class 'input-area'
     // Vô hiệu hóa input và thay đổi placeholder
     $inputArea.prop('disabled', true);  // Vô hiệu hóa input
-    $inputArea.attr('placeholder', 'Click "Đoạn Chat Mới" to start new Session');  // Thay đổi placeholder
+    $inputArea.attr('placeholder', 'Click "Đoạn Chat Mới" để bắt đầu một phiên trò chuyện mới!');  // Thay đổi placeholder
 });
 
 // Hàm thay đổi mô hình và cập nhật href
@@ -432,7 +486,7 @@ function loadChatHistory(sessionId) {
             const $inputArea = $('#user-query');  // Sử dụng id 'user-query' thay vì class 'input-area'
             // Vô hiệu hóa input và thay đổi placeholder
             $inputArea.prop('disabled', false);  // Mở input
-            $inputArea.attr('placeholder', 'Type a message...');  // Thay đổi placeholder
+            $inputArea.attr('placeholder', 'Nhập tin nhắn ...');  // Thay đổi placeholder
 
             // Sau khi tải xong lịch sử chat, cập nhật trạng thái nút Clear Chat
             updateClearChatButtonState();
@@ -475,14 +529,14 @@ const $chatOutput = $('#chat-output');
 
 // Lắng nghe sự kiện click vào nút Clear Chat
 $clearChatButton.on('click', function() {
-    if (confirm("Are you sure you want to clear this chat?")) {
+    if (confirm("Bạn có chắc chắn muốn xóa phiên Chat này?")) {
         // Xóa chat ở frontend
         clearChatHistory();
 
         const $inputArea = $('#user-query');  // Sử dụng id 'user-query' thay vì class 'input-area'
         // Vô hiệu hóa input và thay đổi placeholder
         $inputArea.prop('disabled', true);  // Vô hiệu hóa input
-        $inputArea.attr('placeholder', 'Click "New Chat" to start new Session');  // Thay đổi placeholder
+        $inputArea.attr('placeholder', 'Click "Đoạn Chat Mới" để bắt đầu một phiên trò chuyện mới!');  // Thay đổi placeholder
 
         // Gửi yêu cầu đến backend để xóa chat
         deleteChatSession(currentSessionId);
