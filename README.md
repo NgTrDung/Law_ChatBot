@@ -15,7 +15,7 @@ Data collected from 2 websites: [CƠ SỞ DỮ LIỆU QUỐC GIA VỀ VĂN BẢN
 
 # 4. Demo
 
-![Image](https://github.com/user-attachments/assets/4eb56472-b75f-428d-ab00-d3df68e022ce)
+![Image](https://github.com/user-attachments/assets/7918308c-3c49-41bb-b6a1-8462f71fc352)
 
 Project demo video will be updated later.
 
